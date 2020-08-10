@@ -1,6 +1,8 @@
 # Clear the environment.
 rm(list=ls())
 
+
+
 # Install packages.
 # install.packages("readxl")
 
@@ -24,6 +26,8 @@ sum(is.null(ZAS_Original))
 
 # The function num_deature_desc_func is used to compute the descriptive 
 # statistics for numerical features.
+# IMPORTANT NOTE: "numerical" here includes both quantitative and integer-based
+# categorical features.
 num_deature_desc_func = function(feature_incolumn, feature_desc_df) {
   # Convert the input dataframe column to vector for further computation.
   feature_invector = unlist(feature_incolumn)
