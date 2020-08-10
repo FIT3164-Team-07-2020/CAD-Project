@@ -77,11 +77,11 @@ for (col_index in 1:ncol(ZAS_Original)) {
     colnames(desc_row) = c("Minimum", "Q1", "Median", "Mean", "Q3", "Maximum", 
                            "Variance")
     num_feature_desc = rbind(num_feature_desc, desc_row)
+    # Convert the descriptive statistics vector to strings surrounded with
+    # parentheses.
+    col_desc_info = paste(toString(desc_vector))
+    col_desc_info = paste("(", col_desc_info, ")", sep = "")
   }
-  # Convert the descriptive statistics vector to strings surrounded with
-  # parentheses.
-  col_desc_info = paste(toString(desc_vector))
-  col_desc_info = paste("(", col_desc_info, ")", sep = "")
   # Unique values of each feature (in vectors).
   col_unique_info = c(unique(col))
   col_unique_info = unlist(col_unique_info)
@@ -89,8 +89,14 @@ for (col_index in 1:ncol(ZAS_Original)) {
   col_unique_info = paste(toString(col_unique_info))
   col_unique_info = paste("(", col_unique_info, ")", sep = "")
   # Combine all information above to one string (for each feature).
-  col_info = paste(col_name, col_type, col_unique_info, col_desc_info,
+  # (include the descriptive statistics if the feature is numerical)
+  if (col_type == "numeric") {
+    col_info = paste(col_name, col_type, col_unique_info, col_desc_info,
                    sep = ", ")
+  }
+  else {
+    col_info = paste(col_name, col_type, col_unique_info, sep = ", ")
+  }
   # Write the info string to the text file.
   writeLines(col_info, feature_info_out_file)
 }
@@ -99,7 +105,7 @@ for (col_index in 1:ncol(ZAS_Original)) {
 close(feature_info_out_file)
 
 # Write the descriptive statistics of numerical features into a new csv file.
-write.csv(num_feature_desc, file="Num_feature_desc_stit_Yiqiu.csv")
+write.csv(num_feature_desc, file="Num_feature_desc_stat_Yiqiu.csv")
 
 # To keep the environment relatively clean, delete variables that are useless
 # in further development.
