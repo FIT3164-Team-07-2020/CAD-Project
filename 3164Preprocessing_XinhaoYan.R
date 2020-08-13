@@ -8,7 +8,7 @@ ZAS.dataset = read.csv("Z-Alizadeh sani dataset.csv")
 str(ZAS.dataset)
 
 #set seed to make all teammates have the same random dataset
-set.seed(07070707)
+set.seed(3164)
 
 #get 70% of the dataset to be training dataset
 training.rows = sample(1:nrow(ZAS.dataset), 0.7*nrow(ZAS.dataset))
