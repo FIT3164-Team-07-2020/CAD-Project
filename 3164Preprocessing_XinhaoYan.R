@@ -18,4 +18,17 @@ ZAS.train = ZAS.dataset[training.rows,]
 ZAS.test = ZAS.dataset[-training.rows,]
 
 
-
+#DLP
+ZAS.dataset$DLP = as.numeric(ZAS.dataset$DLP)-1
+#Weak Peripheral Pulse
+ZAS.dataset$Weak.Peripheral.Pulse = as.numeric(ZAS.dataset$Weak.Peripheral.Pulse)-1
+#Lung rales
+ZAS.dataset$Lung.rales = as.numeric(ZAS.dataset$Lung.rales)-1
+#Systolic Murmur
+ZAS.dataset$Systolic.Murmur = as.numeric(ZAS.dataset$Systolic.Murmur)-1
+#Diastolic Murmur
+ZAS.dataset$Diastolic.Murmur = as.numeric(ZAS.dataset$Diastolic.Murmur)-1
+#Dyspnea
+ZAS.dataset$Dyspnea = as.numeric(ZAS.dataset$Dyspnea)-1
+#Atypical
+ZAS.dataset$Atypical = as.numeric(ZAS.dataset$Atypical)-1
