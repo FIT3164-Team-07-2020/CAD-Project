@@ -7,16 +7,6 @@ ZAS.dataset = read.csv("Z-Alizadeh sani dataset.csv")
 #find the description
 str(ZAS.dataset)
 
-#set seed to make all teammates have the same random dataset
-set.seed(3164)
-
-#get 70% of the dataset to be training dataset
-training.rows = sample(1:nrow(ZAS.dataset), 0.7*nrow(ZAS.dataset))
-ZAS.train = ZAS.dataset[training.rows,]
-
-#the rest of rows are testing dataset
-ZAS.test = ZAS.dataset[-training.rows,]
-
 
 #DLP
 ZAS.dataset$DLP = as.numeric(ZAS.dataset$DLP)-1
@@ -32,3 +22,14 @@ ZAS.dataset$Diastolic.Murmur = as.numeric(ZAS.dataset$Diastolic.Murmur)-1
 ZAS.dataset$Dyspnea = as.numeric(ZAS.dataset$Dyspnea)-1
 #Atypical
 ZAS.dataset$Atypical = as.numeric(ZAS.dataset$Atypical)-1
+
+
+#set seed to make all teammates have the same random dataset
+set.seed(3164)
+
+#get 70% of the dataset to be training dataset
+training.rows = sample(1:nrow(ZAS.dataset), 0.7*nrow(ZAS.dataset))
+ZAS.train = ZAS.dataset[training.rows,]
+
+#the rest of rows are testing dataset
+ZAS.test = ZAS.dataset[-training.rows,]
