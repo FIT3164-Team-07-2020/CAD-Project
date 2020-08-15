@@ -1,0 +1,33 @@
+---
+title: "Code Summary for CAD Project"
+author: " FIT3164 Team 07: Danzel, Xinhao and Yiqiu"
+date: "2020/8/15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This document contains all codes with comments written for **FIT3164 Team 07 Heart Disease Project** in 2020.
+A useful reference of using R Markdown: <http://rmarkdown.rstudio.com>.
+
+## Section 1: Data Preparation and Understanding.
+
+This section includes reading, understanding and pre-processing of the Z-Alizadeh Sani dataset.
+
+Note that Z-Alizadeh Sani dataset is available from: <https://archive.ics.uci.edu/ml/machine-learning-databases/00412/>.
+
+### Covert the dataset type:
+Since *.csv* format is more code-friendly than *.xlsx* format, we first convert the type of the dataset:
+```{r eval=FALSE}
+write.csv(read_excel("Z_Alizadeh_Sani_Dataset.xlsx"), 
+          'Z_Alizadeh_Sani_Dataset.csv', 
+          row.names = FALSE)
+```
+Read the converted csv dataset as a dataframe.
+```{r}
+ZAS = read.csv("Z_Alizadeh_Sani_Dataset.csv")
+```
