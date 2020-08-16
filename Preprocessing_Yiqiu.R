@@ -115,3 +115,28 @@ write.csv(num_feature_desc, file="Num_feature_desc_stat_Yiqiu.csv")
 # in further development.
 remove("col", "desc_row", "col_desc_info", "col_index", "col_info", "col_name",
        "col_type", "col_unique_info", "desc_vector", "feature_info_out_file")
+
+for (col_index in 1:ncol(ZAS_Original)) {
+  col = ZAS_Original[, col_index]
+  # Unique values of each feature (in vectors).
+  col_unique_info = c(unique(col))
+  col_unique_info = unlist(col_unique_info)
+  # For features that only have "N" and "Y" categorical values, convert "N" to
+  # 0 and "Y" to 1:
+  if ((length(col_unique_info) == 2) &
+      ("N" %in% col_unique_info) &
+      ("Y" %in% col_unique_info)) {
+    ZAS_Original[ZAS_Original[, names(col)] == "N", names(col)] = "0"
+    ZAS_Original[ZAS_Original[, names(col)] == "Y", names(col)] = "1"
+  }
+  if ((length(col_unique_info) == 1)) {
+    ZAS_Original = ZAS_Original[, !(colnames(ZAS_Original) == names(col))]
+    col_index = col_index - 1
+  }
+  # Specifically for Cath feature, convert the "Cad" value to 1 and "Normal"
+  # value to 0:
+  if (names(col) == "Cath") {
+    ZAS_Original[ZAS_Original[, names(col)] == "Cad", names(col)] = "1"
+    ZAS_Original[ZAS_Original[, names(col)] == "Normal", names(col)] = "0"
+  }
+}

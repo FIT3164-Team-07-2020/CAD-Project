@@ -36,3 +36,20 @@ set.seed(28790502) #Just used student ID as seed, should decide on a common seed
 train.row = sample(1:nrow(cad), 0.8*nrow(cad))
 cad.train = cad[train.row,]
 cad.test = cad[-train.row,]
+
+#Converting categorical variables with "Y" and "N" into numerical binary values.
+#Yes = 1, No = 0
+#Male = 1, Fmale = 0
+VHD = cad$VHD
+cad = subset(cad, select = -c(VHD))
+cad[cad == "Y"] = 1
+cad[cad == "N"] = 0
+cad$Sex[cad$Sex == "Male"] = 1
+cad$Sex[cad$Sex == "Fmale"] = 0
+cad$VHD = VHD
+cad = cad[,c(1:54, 56, 55)]
+
+#Selects all columns with categorical variables and converts to numerical class
+cols = c(11:17, 21:24, 26, 28:31, 36:37)
+cad[cols] = lapply(cad[cols], as.numeric)
+cad$Sex = as.numeric(cad$Sex)
