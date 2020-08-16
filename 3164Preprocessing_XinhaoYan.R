@@ -24,6 +24,18 @@ ZAS.dataset$Dyspnea = as.numeric(ZAS.dataset$Dyspnea)-1
 ZAS.dataset$Atypical = as.numeric(ZAS.dataset$Atypical)-1
 
 
+#Function Class
+ZAS.dataset$Function.Class = as.factor(ZAS.dataset$Function.Class)
+contrasts(ZAS.dataset$Function.Class) = contr.treatment(4)
+contrasts(ZAS.dataset$Function.Class)
+#Region RWMA
+#transfer the data type from integer to factor
+ZAS.dataset$Region.RWMA = as.factor(ZAS.dataset$Region.RWMA)
+contrasts(ZAS.dataset$Region.RWMA) = contr.treatment(5)
+#print the matrix
+contrasts(ZAS.dataset$Region.RWMA)
+
+
 #set seed to make all teammates have the same random dataset
 set.seed(3164)
 
