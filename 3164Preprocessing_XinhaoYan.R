@@ -30,16 +30,27 @@ ZAS.dataset$Dyspnea = as.factor(ZAS.dataset$Dyspnea)
 ZAS.dataset$Atypical = as.numeric(ZAS.dataset$Atypical)-1
 ZAS.dataset$Atypical = as.factor(ZAS.dataset$Atypical)
 
+
+#categorical data that have more than 2 levels-------------------------------
 #Function Class
 ZAS.dataset$Function.Class = as.factor(ZAS.dataset$Function.Class)
 contrasts(ZAS.dataset$Function.Class) = contr.treatment(4)
 contrasts(ZAS.dataset$Function.Class)
+
 #Region RWMA
 #transfer the data type from integer to factor
 ZAS.dataset$Region.RWMA = as.factor(ZAS.dataset$Region.RWMA)
 contrasts(ZAS.dataset$Region.RWMA) = contr.treatment(5)
-#print the matrix
 contrasts(ZAS.dataset$Region.RWMA)
+
+#BBB and VHD
+contrasts(ZAS.dataset$BBB) = contr.treatment(3)
+contrasts(ZAS.dataset$BBB)
+
+#VHD
+contrasts(ZAS.dataset$VHD) = contr.treatment(4)
+contrasts(ZAS.dataset$VHD)
+
 
 
 #set seed to make all teammates have the same random dataset
