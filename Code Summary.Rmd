@@ -63,12 +63,25 @@ Check the number of rows (patients) and columns (features).
 dim(ZAS)
 ```
 
-Format the column names by replacing " " by "_".
+There is a useless feature (Exertional CP) which have all values as N, remove this feature from the dataset.
 ```{r}
-names(ZAS) = str_replace_all(names(ZAS), c(" " = "_"))
+ZAS = ZAS[, !(colnames(ZAS) == "Exertional.CP")]
 ```
 
+Convert all N / Y categorical features' values to binary (0 / 1).
+```{r}
 
+```
+
+Convert values of Sex (Male / Female) and Cath (Normal / Cad) features to binary (0 / 1).
+```{r}
+
+```
+
+Convert values of features  (Function Class, BBB, Region RWMA and VHD)with more than two categories to dummy.
+```{r}
+
+```
 
 Split the dataset into train and test sets (in 70%-30% ratio).
 ```{r}
