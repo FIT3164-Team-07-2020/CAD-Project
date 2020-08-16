@@ -102,8 +102,8 @@ Split the dataset into train and test sets (in 70%-30% ratio).
 #set seed to make all teammates have the same random dataset
 set.seed(3164)
 #get 70% of the dataset to be training dataset
-training.rows = sample(1:nrow(ZAS.dataset), 0.7*nrow(ZAS.dataset))
-ZAS.train = ZAS.dataset[training.rows,]
+training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
+ZAS.train = ZAS[training.rows,]
 #the rest of rows are testing dataset
-ZAS.test = ZAS.dataset[-training.rows,]
+ZAS.test = ZAS[-training.rows,]
 ```
