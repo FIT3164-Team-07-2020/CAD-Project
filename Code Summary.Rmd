@@ -80,8 +80,22 @@ Convert values of Sex (Male / Female) and Cath (Normal / Cad) features to binary
 
 Convert values of features  (Function Class, BBB, Region RWMA and VHD)with more than two categories to dummy.
 ```{r}
+#Function Class
+ZAS$Function.Class = as.factor(ZAS$Function.Class)
+contrasts(ZAS$Function.Class) = contr.treatment(4)
 
+#Region RWMA
+#transfer the data type from integer to factor
+ZAS$Region.RWMA = as.factor(ZAS$Region.RWMA)
+contrasts(ZAS$Region.RWMA) = contr.treatment(5)
+
+#BBB and VHD
+contrasts(ZAS$BBB) = contr.treatment(3)
+
+#VHD
+contrasts(ZAS$VHD) = contr.treatment(4)
 ```
+
 
 Split the dataset into train and test sets (in 70%-30% ratio).
 ```{r}
