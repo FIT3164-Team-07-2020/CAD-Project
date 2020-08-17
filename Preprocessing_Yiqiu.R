@@ -119,8 +119,7 @@ remove("col", "desc_row", "col_desc_info", "col_index", "col_info", "col_name",
 for (col_index in 1:ncol(ZAS_Original)) {
   col = ZAS_Original[, col_index]
   # Unique values of each feature (in vectors).
-  col_unique_info = c(unique(col))
-  col_unique_info = unlist(col_unique_info)
+  col_unique_info = unlist(c(unique(col)))
   # For features that only have "N" and "Y" categorical values, convert "N" to
   # 0 and "Y" to 1:
   if ((length(col_unique_info) == 2) &
@@ -129,14 +128,31 @@ for (col_index in 1:ncol(ZAS_Original)) {
     ZAS_Original[ZAS_Original[, names(col)] == "N", names(col)] = "0"
     ZAS_Original[ZAS_Original[, names(col)] == "Y", names(col)] = "1"
   }
-  if ((length(col_unique_info) == 1)) {
-    ZAS_Original = ZAS_Original[, !(colnames(ZAS_Original) == names(col))]
-    col_index = col_index - 1
-  }
   # Specifically for Cath feature, convert the "Cad" value to 1 and "Normal"
   # value to 0:
   if (names(col) == "Cath") {
     ZAS_Original[ZAS_Original[, names(col)] == "Cad", names(col)] = "1"
     ZAS_Original[ZAS_Original[, names(col)] == "Normal", names(col)] = "0"
   }
+}
+col_names = vector()
+for (col_index in 1:ncol(ZAS_Original)) {
+  col = ZAS_Original[, col_index]
+  # Unique values of each feature (in vectors).
+  col_unique_info = unlist(c(unique(col)))
+  if (length(col_unique_info) = 2) {
+    col_vals_dist = table(col) / 303
+    for (col_val in col_vals_dist) {
+      if ((col_val > 0.95) | (col_val < 0.05)) {
+        col_names = append(col_names, names(col))
+      }
+    }
+  }
+}
+col_names = unique(col_names)
+print(length(col_names))
+for (col_name in col_names) {
+  col = ZAS_Original[, col_name]
+  print(col_name)
+  print(table(col))
 }

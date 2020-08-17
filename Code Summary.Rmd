@@ -17,16 +17,12 @@ A useful reference of using R Markdown: <http://rmarkdown.rstudio.com>.
 ## Section 0: Install and load necessary libraries.
 Installation:
 ```{r eval=FALSE}
-install.packages("readxl")
-install.packages("summarytools")
-install.packages("stringr")
+# install.packages("readxl")
 ```
 
 Loading:
 ```{r}
 library(readxl)
-library(summarytools)
-library(stringr)
 ```
 
 ## Section 1: Data Preparation and Understanding.
@@ -38,6 +34,12 @@ Note that Z-Alizadeh Sani dataset is available from: <https://archive.ics.uci.ed
 Clear the work space before run the code.
 ```{r}
 rm(list = ls())
+```
+
+A small and quick note (to be resolved):
+```{r}
+# Is is necessary to create a log file recording which of the features have been
+# formatted / changed / removed in what kind of way?
 ```
 
 Since *.csv* format is more code-friendly than *.xlsx* format, convert the type of the dataset:
@@ -63,22 +65,42 @@ Check the number of rows (patients) and columns (features).
 dim(ZAS)
 ```
 
-There is a useless feature (Exertional CP) which have all values as N, remove this feature from the dataset.
+There is a useless feature Exertional CP, remove this feature from the dataset (the reason of saying Exertional CP is useless is that it has only one unique value "N" which doesn't help predicting CAD at all).
 ```{r}
 ZAS = ZAS[, !(colnames(ZAS) == "Exertional.CP")]
 ```
 
-Convert all N / Y categorical features' values to binary (0 / 1).
+Convert all categorical features with only "N" / "Y" values to binary (that is, to convert "N" to 0 and "Y" to 1).
 ```{r}
-
+for (feature_index in 1:ncol(ZAS)) {
+  # Get the name of the feature.
+  feature_name = colnames(ZAS)[feature_index]
+  # For each feature.
+  feature = ZAS[, feature_index]
+  # Extract unique values of each feature (in vectors).
+  unique_val = unlist(c(unique(feature)))
+  # If the feature has only "N" and "Y" categorical values, convert "N" to
+  # 0 and "Y" to 1:
+  if ((length(unique_val) == 2) &
+      ("N" %in% unique_val) &
+      ("Y" %in% unique_val)) {
+    ZAS[ZAS[, feature_name] == "N", feature_name] = "0"
+    ZAS[ZAS[, feature_name] == "Y", feature_name] = "1"
+  }
+}
 ```
 
-Convert values of Sex (Male / Female) and Cath (Normal / Cad) features to binary (0 / 1).
+Convert values of Sex ("Male" / "Fmale") and Cath ("Normal" / "Cad") features to binary (that is to: for Sex, convert "Fmale" to 0 and "Male" to 1; for Cath, convert "Normal" to 0 and "Cad" to 1).
 ```{r}
-
+# Convert Sex to binary.
+ZAS$Sex[ZAS$Sex == "Fmale"] = "0"
+ZAS$Sex[ZAS$Sex == "Male"] = "1"
+# Convert Cath to binary.
+ZAS$Cath[ZAS$Cath == "Normal"] = "0"
+ZAS$Cath[ZAS$Cath == "Cad"] = "1"
 ```
 
-Convert values of features  (Function Class, BBB, Region RWMA and VHD)with more than two categories to dummy.
+Convert values of features  (Function Class, BBB, Region RWMA and VHD) with more than two categories to dummy.
 ```{r}
 
 ```
