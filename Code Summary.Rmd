@@ -125,7 +125,35 @@ Split the dataset into train and test sets (in 70%-30% ratio).
 set.seed(3164)
 #get 70% of the dataset to be training dataset
 training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
-ZAS.train = ZAS[training.rows,]
+ZAS.train1 = ZAS[training.rows,]
 #the rest of rows are testing dataset
-ZAS.test = ZAS[-training.rows,]
+ZAS.test1 = ZAS[-training.rows,]
+
+set.seed(070707)
+#get 70% of the dataset to be training dataset
+training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
+ZAS.train2 = ZAS[training.rows,]
+#the rest of rows are testing dataset
+ZAS.test2 = ZAS[-training.rows,]
+
+set.seed(31643164)
+#get 70% of the dataset to be training dataset
+training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
+ZAS.train3 = ZAS[training.rows,]
+#the rest of rows are testing dataset
+ZAS.test3 = ZAS[-training.rows,]
+
+set.seed(13653)
+#get 70% of the dataset to be training dataset
+training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
+ZAS.train4 = ZAS[training.rows,]
+#the rest of rows are testing dataset
+ZAS.test4 = ZAS[-training.rows,]
+
+set.seed(1654221)
+#get 70% of the dataset to be training dataset
+training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
+ZAS.train5 = ZAS[training.rows,]
+#the rest of rows are testing dataset
+ZAS.test5 = ZAS[-training.rows,]
 ```
