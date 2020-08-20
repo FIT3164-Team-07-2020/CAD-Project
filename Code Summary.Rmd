@@ -83,14 +83,13 @@ for (feature_index in 1:ncol(ZAS)) {
 }
 ```
 
-Convert values of Sex ("Male" / "Fmale") and Cath ("Normal" / "Cad") features to binary (that is to: for Sex, convert "Fmale" to 0 and "Male" to 1; for Cath, convert "Normal" to 0 and "Cad" to 1).
+Convert values of Sex ("Male" / "Fmale") and Cath ("Normal" / "Cad") features to binary (that is to: for Sex, convert "Fmale" to 0 and "Male" to 1; for Cath, convert "Normal" to 1 and "Cad" to 0).
 ```{r}
-# Convert Sex to binary.
-ZAS$Sex[ZAS$Sex == "Fmale"] = "0"
-ZAS$Sex[ZAS$Sex == "Male"] = "1"
-# Convert Cath to binary.
-ZAS$Cath[ZAS$Cath == "Normal"] = "0"
-ZAS$Cath[ZAS$Cath == "Cad"] = "1"
+# Convert Sex to binary. Male is 1 and Female is 0
+ZAS$Sex = as.numeric(ZAS$Sex)-1
+
+# Convert Cath to binary. Normal is 1 and Cad is 0
+ZAS$Cath = as.numeric(ZAS$Cath)-1
 ```
 
 Convert values of features  (Function Class, BBB, Region RWMA and VHD) with more than two categories to dummy.
