@@ -42,14 +42,7 @@ A small and quick note (to be resolved):
 # formatted / changed / removed in what kind of way?
 ```
 
-Since *.csv* format is more code-friendly than *.xlsx* format, convert the type of the dataset:
-```{r eval=FALSE}
-write.csv(read_excel("Z_Alizadeh_Sani_Dataset.xlsx"), 
-          'Z_Alizadeh_Sani_Dataset.csv', 
-          row.names = FALSE)
-```
-
-Read the converted csv dataset as a dataframe, copy one .
+Read the csv-formatted dataset as a dataframe.
 ```{r}
 ZAS_Original = read.csv("Z_Alizadeh_Sani_Dataset.csv")
 ZAS = ZAS_Original
