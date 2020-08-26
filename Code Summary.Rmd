@@ -108,6 +108,7 @@ contrasts(ZAS$BBB) = contr.treatment(3)
 
 #VHD
 contrasts(ZAS$VHD) = contr.treatment(4)
+
 ```
 
 
