@@ -15,14 +15,14 @@ This document contains all codes with comments written for **FIT3164 Team 07 Hea
 A useful reference of using R Markdown: <http://rmarkdown.rstudio.com>.
 
 ## Section 0: Install and load necessary libraries.
-Installation:
+Package Installation:
 ```{r eval=FALSE}
-# install.packages("readxl")
+# install.packages("")
 ```
 
-Loading:
+Package Loading:
 ```{r}
-library(readxl)
+# library()
 ```
 
 ## Section 1: Data Preparation and Understanding.
@@ -34,12 +34,6 @@ Note that Z-Alizadeh Sani dataset is available from: <https://archive.ics.uci.ed
 Clear the work space before run the code.
 ```{r}
 rm(list = ls())
-```
-
-A small and quick note (to be resolved):
-```{r}
-# Is is necessary to create a log file recording which of the features have been
-# formatted / changed / removed in what kind of way?
 ```
 
 Read the csv-formatted dataset as a dataframe.
@@ -63,19 +57,7 @@ There is a useless feature Exertional CP, remove this feature from the dataset (
 ZAS = ZAS[, !(colnames(ZAS) == "Exertional.CP")]
 ```
 
-Convert all "factor" variables into "character" type. This makes it easier to convert them into numeric values.
-```{r}
-for (feature_index in 1:ncol(ZAS)) {
-  # Get column name
-  feature_name = colnames(ZAS)[feature_index]
-   #Convert object to "character" if it is "factor"
-  if ((class(ZAS[,feature_name]) == "factor")) {
-    ZAS[,feature_name] = as.character(ZAS[,feature_name])
-  }
-}
-```
-
-Convert all categorical features with only "N" / "Y" values to binary (that is, to convert "N" to 0 and "Y" to 1).
+Convert all categorical features with only "N" / "Y" values to numerical binary (that is, to convert "N" to 0 and "Y" to 1).
 ```{r}
 for (feature_index in 1:ncol(ZAS)) {
   # Get the name of the feature.
@@ -91,84 +73,108 @@ for (feature_index in 1:ncol(ZAS)) {
       ("Y" %in% unique_val)) {
     ZAS[ZAS[, feature_name] == "N", feature_name] = 0
     ZAS[ZAS[, feature_name] == "Y", feature_name] = 1
-    #Convert column from "character" to "numeric" object type.
-    ZAS[,feature_name] = as.numeric(ZAS[,feature_name])
   }
 }
 ```
 
 Convert values of Sex ("Male" / "Fmale") and Cath ("Normal" / "Cad") features to binary (that is to: for Sex, convert "Fmale" to 0 and "Male" to 1; for Cath, convert "Normal" to 1 and "Cad" to 0).
 ```{r}
-# Convert Sex to binary. Male is 1 and Female is 0
+# Convert Sex to binary. Male is 1 and Female is 0.
 ZAS$Sex[ZAS$Sex == "Male"] = 1
 ZAS$Sex[ZAS$Sex == "Fmale"] = 0
-#Convert column to numeric type.
-ZAS$Sex = as.numeric(ZAS$Sex)
 
-
-# Convert Cath to binary. Normal is 0 and Cad is 1
+# Convert Cath to binary. Normal is 0 and Cad is 1.
 ZAS$Cath[ZAS$Cath == "Normal"] = 0
 ZAS$Cath[ZAS$Cath == "Cad"] = 1
-#Convert column to numeric type.
-ZAS$Cath = as.numeric(ZAS$Cath)
 ```
 
 Convert values of features  (Function Class, BBB, Region RWMA and VHD) with more than two categories to dummy.
 ```{r}
-#Function Class
+# Function Class.
 ZAS$Function.Class = as.factor(ZAS$Function.Class)
 contrasts(ZAS$Function.Class) = contr.treatment(4)
 
-#Region RWMA
-#transfer the data type from integer to factor
+# Region RWMA.
 ZAS$Region.RWMA = as.factor(ZAS$Region.RWMA)
 contrasts(ZAS$Region.RWMA) = contr.treatment(5)
 
-#BBB and VHD
+# BBB and VHD.
 ZAS$BBB = as.factor(ZAS$BBB)
 contrasts(ZAS$BBB) = contr.treatment(3)
 
-#VHD
+# VHD.
 ZAS$VHD = as.factor(ZAS$VHD)
 contrasts(ZAS$VHD) = contr.treatment(4)
 ```
 
+All categorical variables are in characters or converted to numeric, this is just for convenience of pre-processing. Now we want them to be factors.
+```{r}
+for (feature_index in 1:ncol(ZAS)) {
+  # Get the name of the feature.
+  feature_name = colnames(ZAS)[feature_index]
+  # For each feature.
+  feature = ZAS[, feature_index]
+  # Extract unique values of each feature (in vectors).
+  unique_val = unlist(c(unique(feature)))
+  # If the feature has only 0 and 1 numerical values:
+  if ((length(unique_val) == 2) &
+      (0 %in% unique_val) &
+      (1 %in% unique_val)) {
+    # Convert the feature from "character" to "numeric" object type.
+    ZAS[,feature_name] = as.factor(ZAS[,feature_name])
+  }
+}
+```
+
+Check the current type of each feature to ensure they are in expected: there should be 34 categorical features (which should be all factor typed) and 21 quantitative features (which should be either numeric or integer typed).
+```{r}
+types = sapply(ZAS, class)
+print(paste0("The number of factor typed features: ",
+             length(grep("factor", types))))
+print(paste0("The number of numeric / integer typed features: ", 
+             length(grep("numeric", types)) + length(grep("integer", types))))
+print(types)
+```
 
 Split the dataset into train and test sets (in 70%-30% ratio).
 ```{r}
-#set seed to make all teammates have the same random dataset
+# Set the seed to make all teammates have the same random dataset.
 set.seed(3164)
-#get 70% of the dataset to be training dataset
+# Get 70% of the dataset to be training dataset.
 training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train1 = ZAS[training.rows,]
-#the rest of rows are testing dataset
+# The rest of rows are testing dataset.
 ZAS.test1 = ZAS[-training.rows,]
 
+# Set the seed to make all teammates have the same random dataset.
 set.seed(070707)
-#get 70% of the dataset to be training dataset
+# Get 70% of the dataset to be training dataset.
 training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train2 = ZAS[training.rows,]
-#the rest of rows are testing dataset
+# The rest of rows are testing dataset.
 ZAS.test2 = ZAS[-training.rows,]
 
+# Set the seed to make all teammates have the same random dataset.
 set.seed(31643164)
-#get 70% of the dataset to be training dataset
+# Get 70% of the dataset to be training dataset.
 training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train3 = ZAS[training.rows,]
-#the rest of rows are testing dataset
+# The rest of rows are testing dataset.
 ZAS.test3 = ZAS[-training.rows,]
 
+# Set the seed to make all teammates have the same random dataset.
 set.seed(13653)
-#get 70% of the dataset to be training dataset
+# Get 70% of the dataset to be training dataset.
 training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train4 = ZAS[training.rows,]
-#the rest of rows are testing dataset
+# The rest of rows are testing dataset.
 ZAS.test4 = ZAS[-training.rows,]
 
+# Set the seed to make all teammates have the same random dataset.
 set.seed(1654221)
-#get 70% of the dataset to be training dataset
+# Get 70% of the dataset to be training dataset.
 training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train5 = ZAS[training.rows,]
-#the rest of rows are testing dataset
+# The rest of rows are testing dataset.
 ZAS.test5 = ZAS[-training.rows,]
 ```
