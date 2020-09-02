@@ -1,73 +1,14 @@
----
-title: "Code Summary for CAD Project"
-author: " FIT3164 Team 07: Danzel, Xinhao and Yiqiu"
-date: "2020/8/15"
-output: html_document
----
+library(ROCR) #AUC
+library(kknn) #KNN
+library(randomForest) #RF
+library(e1071) #SVM
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-## Introduction
 
-This document contains all codes with comments written for **FIT3164 Team 07 Heart Disease Project** in 2020.  
-A useful reference of using R Markdown: <http://rmarkdown.rstudio.com>.
-
-## Section 0: Install and load necessary libraries.
-
-Package Installation:
-```{r eval=FALSE}
-# install.packages("")
-# install.packages("ROCR")
-# install.packages("kknn")
-# install.packages("randomForest")
-# install.packages("e1071")
-```
-
-Package Loading:
-```{r}
-# library()
-library(ROCR) # This library is used to calculate AUC.
-library(kknn) # This library is used to help training the K-nearest Neighbors model.
-library(randomForest) # This library is used to help training the Random Forest model.
-library(e1071) # This library is used to help training the Support Vector Machine model.
-```
-
-## Section 1: Data Preparation and Understanding.
-
-This section includes reading, understanding and pre-processing of the Z-Alizadeh Sani dataset.  
-
-Note that Z-Alizadeh Sani dataset is available from: <https://archive.ics.uci.edu/ml/machine-learning-databases/00412/>.  
-
-Clear the work space before run the code.
-```{r}
 rm(list = ls())
-```
-
-Read the csv-formatted dataset as a dataframe.
-```{r}
 ZAS_Original = read.csv("Z_Alizadeh_Sani_Dataset.csv")
 ZAS = ZAS_Original
-```
-
-Show the first 5 lines of the dataset to see what it looks like.
-```{r}
-head(ZAS)
-```
-
-Check the number of rows (patients) and columns (features).
-```{r}
-dim(ZAS)
-```
-
-There is a useless feature Exertional CP, remove this feature from the dataset (the reason of saying Exertional CP is useless is that it has only one unique value "N" which doesn't help predicting CAD at all).
-```{r}
 ZAS = ZAS[, !(colnames(ZAS) == "Exertional.CP")]
-```
-
-Convert all "factor" variables into "character" type. This makes it easier to convert them into numeric values.
-```{r}
 for (feature_index in 1:ncol(ZAS)) {
   # Get column name
   feature_name = colnames(ZAS)[feature_index]
@@ -76,10 +17,6 @@ for (feature_index in 1:ncol(ZAS)) {
     ZAS[,feature_name] = as.character(ZAS[,feature_name])
   }
 }
-```
-
-Convert all categorical features with only "N" / "Y" values to numerical binary (that is, to convert "N" to 0 and "Y" to 1).
-```{r}
 for (feature_index in 1:ncol(ZAS)) {
   # Get the name of the feature.
   feature_name = colnames(ZAS)[feature_index]
@@ -96,40 +33,24 @@ for (feature_index in 1:ncol(ZAS)) {
     ZAS[ZAS[, feature_name] == "Y", feature_name] = 1
   }
 }
-```
-
-Convert values of Sex ("Male" / "Fmale") and Cath ("Normal" / "Cad") features to binary (that is to: for Sex, convert "Fmale" to 0 and "Male" to 1; for Cath, convert "Normal" to 1 and "Cad" to 0).
-```{r}
 # Convert Sex to binary. Male is 1 and Female is 0.
 ZAS$Sex[ZAS$Sex == "Male"] = 1
 ZAS$Sex[ZAS$Sex == "Fmale"] = 0
 # Convert Cath to binary. Normal is 0 and Cad is 1.
 ZAS$Cath[ZAS$Cath == "Normal"] = 0
 ZAS$Cath[ZAS$Cath == "Cad"] = 1
-```
-
-Convert values of features  (Function Class, BBB, Region RWMA and VHD) with more than two categories to dummy.
-```{r}
 # Function Class.
 ZAS$Function.Class = as.factor(ZAS$Function.Class)
 contrasts(ZAS$Function.Class) = contr.treatment(4)
-
 # Region RWMA.
 ZAS$Region.RWMA = as.factor(ZAS$Region.RWMA)
 contrasts(ZAS$Region.RWMA) = contr.treatment(5)
-
 # BBB and VHD.
 ZAS$BBB = as.factor(ZAS$BBB)
 contrasts(ZAS$BBB) = contr.treatment(3)
-
 # VHD.
 ZAS$VHD = as.factor(ZAS$VHD)
 contrasts(ZAS$VHD) = contr.treatment(4)
-
-```
-
-All categorical variables are in characters or converted to numeric, this is just for convenience of pre-processing. Now we want them to be factors.
-```{r}
 for (feature_index in 1:ncol(ZAS)) {
   # Get the name of the feature.
   feature_name = colnames(ZAS)[feature_index]
@@ -145,20 +66,12 @@ for (feature_index in 1:ncol(ZAS)) {
     ZAS[,feature_name] = as.factor(ZAS[,feature_name])
   }
 }
-```
-
-Check the current type of each feature to ensure they are in expected: there should be 34 categorical features (which should be all factor typed) and 21 quantitative features (which should be either numeric or integer typed).
-```{r}
 types = sapply(ZAS, class)
 print(paste0("The number of factor typed features: ",
              length(grep("factor", types))))
 print(paste0("The number of numeric / integer typed features: ", 
              length(grep("numeric", types)) + length(grep("integer", types))))
 print(types)
-```
-
-Split the dataset into train and test sets (in 70%-30% ratio).
-```{r}
 # Set the seed to make all teammates have the same random dataset.
 set.seed(3164)
 # Get 70% of the dataset to be training dataset.
@@ -166,7 +79,6 @@ training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train1 = ZAS[training.rows,]
 # The rest of rows are testing dataset.
 ZAS.test1 = ZAS[-training.rows,]
-
 # Set the seed to make all teammates have the same random dataset.
 set.seed(070707)
 # Get 70% of the dataset to be training dataset.
@@ -174,7 +86,6 @@ training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train2 = ZAS[training.rows,]
 # The rest of rows are testing dataset.
 ZAS.test2 = ZAS[-training.rows,]
-
 # Set the seed to make all teammates have the same random dataset.
 set.seed(31643164)
 # Get 70% of the dataset to be training dataset.
@@ -182,7 +93,6 @@ training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train3 = ZAS[training.rows,]
 # The rest of rows are testing dataset.
 ZAS.test3 = ZAS[-training.rows,]
-
 # Set the seed to make all teammates have the same random dataset.
 set.seed(13653)
 # Get 70% of the dataset to be training dataset.
@@ -190,7 +100,6 @@ training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train4 = ZAS[training.rows,]
 # The rest of rows are testing dataset.
 ZAS.test4 = ZAS[-training.rows,]
-
 # Set the seed to make all teammates have the same random dataset.
 set.seed(1654221)
 # Get 70% of the dataset to be training dataset.
@@ -198,16 +107,10 @@ training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train5 = ZAS[training.rows,]
 # The rest of rows are testing dataset.
 ZAS.test5 = ZAS[-training.rows,]
-```
 
-## Section 2: Preliminary model training and evaluation.
 
-In this section, 7 preliminary machine learning classification models will be built and evaluated (Note that preliminary here means default settings are used when training each model).  
 
-Each model will be trained 5 times using 5 train-test sets combination generated in Section 1. The average accuracy & AUC of each model will be calculated, recorded and compared.  
-
-K-nearest neighbor model (KNN):
-``` {r}
+# K-nearest neighbor model (KNN):
 # Create vectors containing AUC and accuracy of each round's model.
 KNN_AUCs = c()
 KNN_accuracies = c()
@@ -230,10 +133,10 @@ for(index in 1:5) {
 # Calculate and print the average AUC and accuracy of 5-round KNN models.
 print(paste0("Average AUC for KNN: ", mean(KNN_AUCs)))
 print(paste0("Average accuracy of KNN: ", mean(KNN_accuracies)))
-```
 
-Random forest model (RF):
-``` {r}
+
+
+# Random forest model (RF):
 # Create vectors containing AUC and accuracy of each round's model.
 RF_AUCs = c()
 RF_accuracies = c()
@@ -257,10 +160,10 @@ for(index in 1:5) {
 # Calculate and print the average AUC and accuracy of 5-round KNN models.
 print(paste0("Average AUC for RF: ", mean(RF_AUCs)))
 print(paste0("Average accuracy of RF: ", mean(RF_accuracies)))
-```
 
-Support Vector Machine (SVM):
-``` {r}
+
+
+# Support Vector Machine (SVM):
 # Create vectors containing AUC and accuracy of each round's model.
 SVM_AUCs = c()
 SVM_accuracies = c()
@@ -284,4 +187,12 @@ for(index in 1:5) {
 # Calculate and print the average AUC and accuracy of 5-round KNN models.
 print(paste0("Average AUC for SVM: ", mean(SVM_AUCs)))
 print(paste0("Average accuracy of SVM: ", mean(SVM_accuracies)))
-```
+
+
+
+# Need to be talked about:
+# - How will the feature selection be integrated into model training?
+# - Is it possible to build final outcome as an interface which can be connected
+#   to both mobile app / website?
+# - How will the app / dataset read inputs from user?
+# - Make GitHub repository public / available to the teaching team.
