@@ -10,6 +10,14 @@ ZAS_Original = read.csv("Z_Alizadeh_Sani_Dataset.csv")
 ZAS = ZAS_Original
 ZAS = ZAS[, !(colnames(ZAS) == "Exertional.CP")]
 for (feature_index in 1:ncol(ZAS)) {
+  # Get column name
+  feature_name = colnames(ZAS)[feature_index]
+   #Convert object to "character" if it is "factor"
+  if ((class(ZAS[,feature_name]) == "factor")) {
+    ZAS[,feature_name] = as.character(ZAS[,feature_name])
+  }
+}
+for (feature_index in 1:ncol(ZAS)) {
   # Get the name of the feature.
   feature_name = colnames(ZAS)[feature_index]
   # For each feature.
@@ -58,6 +66,12 @@ for (feature_index in 1:ncol(ZAS)) {
     ZAS[,feature_name] = as.factor(ZAS[,feature_name])
   }
 }
+types = sapply(ZAS, class)
+print(paste0("The number of factor typed features: ",
+             length(grep("factor", types))))
+print(paste0("The number of numeric / integer typed features: ", 
+             length(grep("numeric", types)) + length(grep("integer", types))))
+print(types)
 # Set the seed to make all teammates have the same random dataset.
 set.seed(3164)
 # Get 70% of the dataset to be training dataset.
@@ -97,6 +111,7 @@ ZAS.test5 = ZAS[-training.rows,]
 
 
 # K-nearest neighbor model (KNN):
+# Create vectors containing AUC and accuracy of each round's model.
 KNN_AUCs = c()
 KNN_accuracies = c()
 for(index in 1:5) {
@@ -106,11 +121,11 @@ for(index in 1:5) {
   # Train the model and get the fitted values.
   KNN = kknn(Cath~., train, test)
   fitted_values = fitted(KNN)
-  # Calculate and store the AUC of each round's model.
+  # Calculate and store the AUC.
   pred = prediction(as.numeric(fitted_values), test$Cath)
   AUC = performance(pred, 'auc')@y.values
   KNN_AUCs = append(KNN_AUCs, as.numeric(AUC))
-  # Calculate and store the accuracy of each round's model.
+  # Calculate and store the accuracy.
   conf_matrix = table(test$Cath, fitted_values, dnn = c("Actual", "Predicted"))
   accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
   KNN_accuracies = append(KNN_accuracies, accuracy)
@@ -122,6 +137,7 @@ print(paste0("Average accuracy of KNN: ", mean(KNN_accuracies)))
 
 
 # Random forest model (RF):
+# Create vectors containing AUC and accuracy of each round's model.
 RF_AUCs = c()
 RF_accuracies = c()
 for(index in 1:5) {
@@ -132,11 +148,11 @@ for(index in 1:5) {
   RF = randomForest(Cath~., data = train)
   test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
   fitted_values = predict(RF, test_no_cad)
-  # Calculate and store the AUC of each round's model.
+  # Calculate and store the AUC.
   pred = prediction(as.numeric(fitted_values), test$Cath)
   AUC = performance(pred, 'auc')@y.values
   RF_AUCs = append(RF_AUCs, as.numeric(AUC))
-  # Calculate and store the accuracy of each round's model.
+  # Calculate and store the accuracy.
   conf_matrix = table(test$Cath, fitted_values, dnn = c("Actual", "Predicted"))
   accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
   RF_accuracies = append(RF_accuracies, accuracy)
@@ -147,7 +163,8 @@ print(paste0("Average accuracy of RF: ", mean(RF_accuracies)))
 
 
 
-# Support Vector Machine:
+# Support Vector Machine (SVM):
+# Create vectors containing AUC and accuracy of each round's model.
 SVM_AUCs = c()
 SVM_accuracies = c()
 for(index in 1:5) {

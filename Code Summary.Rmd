@@ -11,25 +11,34 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-This document contains all codes with comments written for **FIT3164 Team 07 Heart Disease Project** in 2020.
+This document contains all codes with comments written for **FIT3164 Team 07 Heart Disease Project** in 2020.  
 A useful reference of using R Markdown: <http://rmarkdown.rstudio.com>.
 
 ## Section 0: Install and load necessary libraries.
+
 Package Installation:
 ```{r eval=FALSE}
 # install.packages("")
+# install.packages("ROCR")
+# install.packages("kknn")
+# install.packages("randomForest")
+# install.packages("e1071")
 ```
 
 Package Loading:
 ```{r}
 # library()
+library(ROCR) # This library is used to calculate AUC.
+library(kknn) # This library is used to help training the K-nearest Neighbors model.
+library(randomForest) # This library is used to help training the Random Forest model.
+library(e1071) # This library is used to help training the Support Vector Machine model.
 ```
 
 ## Section 1: Data Preparation and Understanding.
 
-This section includes reading, understanding and pre-processing of the Z-Alizadeh Sani dataset.
+This section includes reading, understanding and pre-processing of the Z-Alizadeh Sani dataset.  
 
-Note that Z-Alizadeh Sani dataset is available from: <https://archive.ics.uci.edu/ml/machine-learning-databases/00412/>.
+Note that Z-Alizadeh Sani dataset is available from: <https://archive.ics.uci.edu/ml/machine-learning-databases/00412/>.  
 
 Clear the work space before run the code.
 ```{r}
@@ -188,4 +197,90 @@ training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
 ZAS.train5 = ZAS[training.rows,]
 # The rest of rows are testing dataset.
 ZAS.test5 = ZAS[-training.rows,]
+```
+
+## Section 2: Preliminary model training and evaluation.
+
+In this section, 7 preliminary machine learning classification models will be built and evaluated (Note that preliminary here means default settings are used when training each model).  
+
+Each model will be trained 5 times using 5 train-test sets combination generated in Section 1. The average accuracy & AUC of each model will be calculated, recorded and compared.  
+
+K-nearest neighbor model (KNN):
+``` {r}
+# Create vectors containing AUC and accuracy of each round's model.
+KNN_AUCs = c()
+KNN_accuracies = c()
+for(index in 1:5) {
+  # Iterate through each train-test sets combination.
+  train = get(paste0("ZAS.train", index))
+  test = get(paste0("ZAS.test", index))
+  # Train the model and get the fitted values.
+  KNN = kknn(Cath~., train, test)
+  fitted_values = fitted(KNN)
+  # Calculate and store the AUC.
+  pred = prediction(as.numeric(fitted_values), test$Cath)
+  AUC = performance(pred, 'auc')@y.values
+  KNN_AUCs = append(KNN_AUCs, as.numeric(AUC))
+  # Calculate and store the accuracy.
+  conf_matrix = table(test$Cath, fitted_values, dnn = c("Actual", "Predicted"))
+  accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
+  KNN_accuracies = append(KNN_accuracies, accuracy)
+}
+# Calculate and print the average AUC and accuracy of 5-round KNN models.
+print(paste0("Average AUC for KNN: ", mean(KNN_AUCs)))
+print(paste0("Average accuracy of KNN: ", mean(KNN_accuracies)))
+```
+
+Random forest model (RF):
+``` {r}
+# Create vectors containing AUC and accuracy of each round's model.
+RF_AUCs = c()
+RF_accuracies = c()
+for(index in 1:5) {
+  # Iterate through each train-test sets combination.
+  train = get(paste0("ZAS.train", index))
+  test = get(paste0("ZAS.test", index))
+  # Train the model and get the fitted values.
+  RF = randomForest(Cath~., data = train)
+  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
+  fitted_values = predict(RF, test_no_cad)
+  # Calculate and store the AUC.
+  pred = prediction(as.numeric(fitted_values), test$Cath)
+  AUC = performance(pred, 'auc')@y.values
+  RF_AUCs = append(RF_AUCs, as.numeric(AUC))
+  # Calculate and store the accuracy.
+  conf_matrix = table(test$Cath, fitted_values, dnn = c("Actual", "Predicted"))
+  accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
+  RF_accuracies = append(RF_accuracies, accuracy)
+}
+# Calculate and print the average AUC and accuracy of 5-round KNN models.
+print(paste0("Average AUC for RF: ", mean(RF_AUCs)))
+print(paste0("Average accuracy of RF: ", mean(RF_accuracies)))
+```
+
+Support Vector Machine (SVM):
+``` {r}
+# Create vectors containing AUC and accuracy of each round's model.
+SVM_AUCs = c()
+SVM_accuracies = c()
+for(index in 1:5) {
+  # Iterate through each train-test sets combination.
+  train = get(paste0("ZAS.train", index))
+  test = get(paste0("ZAS.test", index))
+  # Train the model and get the fitted values.
+  SVM = svm(Cath~., data = train)
+  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
+  fitted_values = predict(SVM, test_no_cad)
+  # Calculate and store the AUC of each round's model.
+  pred = prediction(as.numeric(fitted_values), test$Cath)
+  AUC = performance(pred, 'auc')@y.values
+  SVM_AUCs = append(SVM_AUCs, as.numeric(AUC))
+  # Calculate and store the accuracy of each round's model.
+  conf_matrix = table(test$Cath, fitted_values, dnn = c("Actual", "Predicted"))
+  accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
+  SVM_accuracies = append(SVM_accuracies, accuracy)
+}
+# Calculate and print the average AUC and accuracy of 5-round KNN models.
+print(paste0("Average AUC for SVM: ", mean(SVM_AUCs)))
+print(paste0("Average accuracy of SVM: ", mean(SVM_accuracies)))
 ```
