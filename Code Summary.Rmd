@@ -285,3 +285,50 @@ for(index in 1:5) {
 print(paste0("Average AUC for SVM: ", mean(SVM_AUCs)))
 print(paste0("Average accuracy of SVM: ", mean(SVM_accuracies)))
 ```
+
+Naive Bayes:
+``` {r}
+bayes = naiveBayes(Cath~., data=ZAS.train1)
+
+m.predict = predict(bayes, ZAS.test1)
+t2 = table(actual = ZAS.test1$Cath, predicted = m.predict)
+#accuracy
+Accuracy.Bayes = (t2[1,1]+t2[2,2])/nrow(ZAS.test1)
+cat("\n• Naïve Bayes\n")
+t2
+cat("Accuracy of Naïve Bayes: ", Accuracy.Bayes, "\n")
+#Naive Bayes is a bad model that considers almost all the case to be 'no cath'.
+```
+
+Decision Tree:
+``` {r}
+# Create vectors containing AUC and accuracy of each round's model.
+Tree_AUCs = c()
+Tree_accuracies = c()
+for(index in 1:5) {
+  # Iterate through each train-test sets combination.
+  train = get(paste0("ZAS.train", index))
+  test = get(paste0("ZAS.test", index))
+  # Train the model and get the fitted values.
+  r.fit=tree(Cath~., data=train)
+  m.predict = predict(r.fit, test, type = "class")
+  t1 = table(actual = test$Cath, predicted = m.predict)
+  # Accuracy
+  Accuracy.Tree = (t1[1,1]+t1[2,2])/nrow(test)
+  Tree_accuracies = append(Tree_accuracies, Accuracy.Tree)
+  
+  # do predictions as probabilities and draw ROC
+  pred.tree = predict(r.fit, test, type = "vector")
+  # computing a simple ROC curve (x-axis: fpr, y-axis: tpr)
+  # labels are actual values, predictors are probability of class 
+  Rpred <- ROCR::prediction(pred.tree[,2], test[["Cath"]]) 
+  cauc = performance(Rpred, "auc")
+  Tree_AUCs = append(Tree_AUCs, as.numeric(cauc@y.values))
+
+}
+cat(Tree_AUCs)
+cat(Tree_accuracies)
+# Average
+print(paste0("Average AUC for decsion tree: ", round(mean(Tree_AUCs),digits = 5)))
+print(paste0("Average accuracy of decision tree: ", round(mean(Tree_accuracies),digits = 5)))
+```
