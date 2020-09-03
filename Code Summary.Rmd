@@ -299,15 +299,32 @@ print(paste0("Average accuracy of SVM: ", mean(SVM_accuracies)))
 Naive Bayes:
 ``` {r}
 bayes = naiveBayes(Cath~., data=ZAS.train1)
+Bayes_AUCs = c()
+Bayes_accuracies = c()
+for(index in 1:5) {
+  # Iterate through each train-test sets combination.
+  train = get(paste0("ZAS.train", index))
+  test = get(paste0("ZAS.test", index))
+  # Train the model and get the fitted values.
+  r.fit=naiveBayes(Cath~., data=train)
+  m.predict = predict(r.fit, test)
+  t1 = table(actual = test$Cath, predicted = m.predict)
+  # Accuracy
+  Accuracy.Tree = (t1[1,1]+t1[2,2])/nrow(test)
+  Bayes_accuracies = append(Tree_accuracies, Accuracy.Tree)
 
-m.predict = predict(bayes, ZAS.test1)
-t2 = table(actual = ZAS.test1$Cath, predicted = m.predict)
-#accuracy
-Accuracy.Bayes = (t2[1,1]+t2[2,2])/nrow(ZAS.test1)
-cat("\n• Naïve Bayes\n")
-t2
-cat("Accuracy of Naïve Bayes: ", Accuracy.Bayes, "\n")
-#Naive Bayes is a bad model that considers almost all the case to be 'no cath'.
+  # AUC
+  Rpred.bayes = predict(r.fit, test, type = 'raw') 
+  Rpred <- ROCR::prediction( Rpred.bayes[,2], test[["Cath"]]) 
+  cauc = performance(Rpred, "auc")
+  AUC.Bayes = as.numeric(cauc@y.values)
+  Bayes_AUCs = append(Tree_AUCs, as.numeric(cauc@y.values))
+
+}
+# Average
+cat(paste0("Average AUC for Naive Bayes: ", round(mean(Bayes_AUCs),digits = 5)))
+cat("\n")
+cat(paste0("Average accuracy of Naive Bayes: ", round(mean(Bayes_accuracies),digits = 5)))
 ```
 
 Decision Tree:
@@ -336,9 +353,8 @@ for(index in 1:5) {
   Tree_AUCs = append(Tree_AUCs, as.numeric(cauc@y.values))
 
 }
-cat(Tree_AUCs)
-cat(Tree_accuracies)
 # Average
-print(paste0("Average AUC for decsion tree: ", round(mean(Tree_AUCs),digits = 5)))
-print(paste0("Average accuracy of decision tree: ", round(mean(Tree_accuracies),digits = 5)))
+cat(paste0("Average AUC for decsion tree: ", round(mean(Tree_AUCs),digits = 5)))
+cat("\n")
+cat(paste0("Average accuracy of decision tree: ", round(mean(Tree_accuracies),digits = 5)))
 ```
