@@ -24,6 +24,7 @@ Package Installation:
 # install.packages("kknn")
 # install.packages("randomForest")
 # install.packages("e1071")
+# install.packages("adabag")
 ```
 
 Package Loading:
@@ -35,6 +36,7 @@ library(kknn) # This library is used to help training the K-nearest Neighbors mo
 library(randomForest) # This library is used to help training the Random Forest model.
 library(e1071) # This library is used to help training the Support Vector Machine model.
 library(tree) #This library is used to build decision tree.
+library(adabag) # This library is used to build adaptive boosting and bagging models
 ```
 
 ## Section 1: Data Preparation and Understanding.
@@ -311,14 +313,14 @@ for(index in 1:5) {
   t1 = table(actual = test$Cath, predicted = m.predict)
   # Accuracy
   Accuracy.Tree = (t1[1,1]+t1[2,2])/nrow(test)
-  Bayes_accuracies = append(Tree_accuracies, Accuracy.Tree)
+  Bayes_accuracies = append(Bayes_accuracies, Accuracy.Tree)
 
   # AUC
   Rpred.bayes = predict(r.fit, test, type = 'raw') 
   Rpred <- ROCR::prediction( Rpred.bayes[,2], test[["Cath"]]) 
   cauc = performance(Rpred, "auc")
   AUC.Bayes = as.numeric(cauc@y.values)
-  Bayes_AUCs = append(Tree_AUCs, as.numeric(cauc@y.values))
+  Bayes_AUCs = append(Bayes_AUCs, as.numeric(cauc@y.values))
 
 }
 # Average
@@ -358,3 +360,95 @@ cat(paste0("Average AUC for decsion tree: ", round(mean(Tree_AUCs),digits = 5)))
 cat("\n")
 cat(paste0("Average accuracy of decision tree: ", round(mean(Tree_accuracies),digits = 5)))
 ```
+
+Boosting (Adaptive)
+
+```{r, message=FALSE, warning=FALSE}
+#Boosting
+# Create vectors containing AUC and accuracy of each round's model.
+Boost_AUCs = c()
+Boost_accuracies = c()
+for(index in 1:5) {
+  # Iterate through each train-test sets combination.
+  train = get(paste0("ZAS.train", index))
+  test = get(paste0("ZAS.test", index))
+  # Train the model and get the fitted values.
+  boost = boosting(Cath~., data = train)
+  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
+  boostpredict = predict.boosting(boost, newdata = test_no_cad)
+  #Calculate accuracy of the model
+  n = sum(boostpredict$confusion)
+  x = diag(boostpredict$confusion)
+  accuracy = sum(x)/n
+  Boost_accuracies = append(Boost_accuracies, accuracy)
+  #Get AUC
+  boostprob = prediction(boostpredict$prob[,2], test$Cath)
+  AUC = performance(boostprob, "auc")@y.values
+  Boost_AUCs = append(Boost_AUCs, as.numeric(AUC))
+  
+}
+print(paste0("Average AUC for boosting: ", mean(Boost_AUCs)))
+print(paste0("Average accuracy of boosting: ", mean(Boost_accuracies)))
+
+```
+
+Boosting (Gradient)
+
+```{r message=FALSE, warning=FALSE}
+#Gradient Boosting
+# Create vectors containing AUC and accuracy of each round's model.
+gradb_AUCs = c()
+gradb_accuracies = c()
+for(index in 1:5) {
+  # Iterate through each train-test sets combination.
+  train = get(paste0("ZAS.train", index))
+  test = get(paste0("ZAS.test", index))
+  # Train the model and get the fitted values.
+  gradb = train(Cath~., data = train, method = "gbm", verbose = FALSE)
+  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
+  gradbpredict = predict(gradb, test_no_cad)
+  #Calculate accuracy
+  conf_matrix = table(test$Cath, gradbpredict, dnn = c("Actual", "Predicted"))
+  accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
+  gradb_accuracies = append(gradb_accuracies, accuracy)
+  #Get AUC
+  gradbprob = prediction(as.numeric(gradbpredict), test$Cath)
+  AUC = performance(gradbprob, "auc")@y.values
+  gradb_AUCs = append(gradb_AUCs, as.numeric(AUC))
+}
+print(paste0("Average AUC for Gradient Boosting: ", mean(gradb_AUCs)))
+print(paste0("Average accuracy of Gradient Boosting: ", mean(gradb_accuracies)))
+
+```
+
+Bagging
+
+```{r message=FALSE, warning=FALSE}
+#Bagging
+# Create vectors containing AUC and accuracy of each round's model.
+Bagg_AUCs = c()
+Bagg_accuracies = c()
+for(index in 1:5) {
+  # Iterate through each train-test sets combination.
+  train = get(paste0("ZAS.train", index))
+  test = get(paste0("ZAS.test", index))
+  # Train the model and get the fitted values.
+  bagg = bagging(Cath~., data = train)
+  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
+  baggpredict = predict.bagging(bagg, newdata = test_no_cad)
+  #Calculate accuracy of the model
+  n = sum(baggpredict$confusion)
+  x = diag(baggpredict$confusion)
+  accuracy = sum(x)/n
+  Bagg_accuracies = append(Bagg_accuracies, accuracy)
+  #Get AUC
+  baggprob = prediction(baggpredict$prob[,2], test$Cath)
+  AUC = performance(baggprob, "auc")@y.values
+  Bagg_AUCs = append(Bagg_AUCs, as.numeric(AUC))
+  
+}
+print(paste0("Average AUC for Bagging: ", mean(Bagg_AUCs)))
+print(paste0("Average accuracy of Bagging: ", mean(Bagg_accuracies)))
+
+```
+
