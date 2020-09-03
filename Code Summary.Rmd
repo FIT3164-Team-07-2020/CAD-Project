@@ -32,6 +32,7 @@ library(ROCR) # This library is used to calculate AUC.
 library(kknn) # This library is used to help training the K-nearest Neighbors model.
 library(randomForest) # This library is used to help training the Random Forest model.
 library(e1071) # This library is used to help training the Support Vector Machine model.
+library(tree) #This library is used to build decision tree.
 ```
 
 ## Section 1: Data Preparation and Understanding.
