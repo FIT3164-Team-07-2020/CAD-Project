@@ -19,6 +19,7 @@ A useful reference of using R Markdown: <http://rmarkdown.rstudio.com>.
 Package Installation:
 ```{r eval=FALSE}
 # install.packages("")
+# install.packages("caret")
 # install.packages("ROCR")
 # install.packages("kknn")
 # install.packages("randomForest")
@@ -28,6 +29,7 @@ Package Installation:
 Package Loading:
 ```{r}
 # library()
+library(caret) # This library is used to pre-process the data.
 library(ROCR) # This library is used to calculate AUC.
 library(kknn) # This library is used to help training the K-nearest Neighbors model.
 library(randomForest) # This library is used to help training the Random Forest model.
@@ -61,9 +63,18 @@ Check the number of rows (patients) and columns (features).
 dim(ZAS)
 ```
 
-There is a useless feature Exertional CP, remove this feature from the dataset (the reason of saying Exertional CP is useless is that it has only one unique value "N" which doesn't help predicting CAD at all).
+Remove predictor features with zero / nearly zero variances (the reason is that the features have extremely unbalanced value distribution which don't significantly help predicting CAD).
 ```{r}
-ZAS = ZAS[, !(colnames(ZAS) == "Exertional.CP")]
+# Find predictor features with zero / nearly-zero variances.
+# Record their column indexes.
+nzv_feature_indexes = nearZeroVar(ZAS[, !(colnames(ZAS) %in% c("Cad"))])
+# Print selected features information.
+print(paste0("Number of predictor features with zero or near-zero variances: ",
+             length(nzv_feature_indexes)))
+print(paste0("Following predictor features have zero or near-zero variances and should be removed: ",
+             toString(colnames(ZAS)[nzv_feature_indexes])))
+# Remove predictor features with zero / nearly-zero variances.
+ZAS = ZAS[, -nzv_feature_indexes]
 ```
 
 Convert all "factor" variables into "character" type. This makes it easier to convert them into numeric values.
@@ -108,7 +119,7 @@ ZAS$Cath[ZAS$Cath == "Normal"] = 0
 ZAS$Cath[ZAS$Cath == "Cad"] = 1
 ```
 
-Convert values of features  (Function Class, BBB, Region RWMA and VHD) with more than two categories to dummy.
+Convert values of features  (Function Class, Region RWMA and VHD) with more than two categories to dummy.
 ```{r}
 # Function Class.
 ZAS$Function.Class = as.factor(ZAS$Function.Class)
@@ -118,9 +129,7 @@ contrasts(ZAS$Function.Class) = contr.treatment(4)
 ZAS$Region.RWMA = as.factor(ZAS$Region.RWMA)
 contrasts(ZAS$Region.RWMA) = contr.treatment(5)
 
-# BBB and VHD.
-ZAS$BBB = as.factor(ZAS$BBB)
-contrasts(ZAS$BBB) = contr.treatment(3)
+# Note that BBB is removed before because of its near-zero variance.
 
 # VHD.
 ZAS$VHD = as.factor(ZAS$VHD)
@@ -206,7 +215,7 @@ In this section, 7 preliminary machine learning classification models will be bu
 
 Each model will be trained 5 times using 5 train-test sets combination generated in Section 1. The average accuracy & AUC of each model will be calculated, recorded and compared.  
 
-K-nearest neighbor model (KNN):
+K-nearest neighbor:
 ``` {r}
 # Create vectors containing AUC and accuracy of each round's model.
 KNN_AUCs = c()
@@ -232,7 +241,7 @@ print(paste0("Average AUC for KNN: ", mean(KNN_AUCs)))
 print(paste0("Average accuracy of KNN: ", mean(KNN_accuracies)))
 ```
 
-Random forest model (RF):
+Random forest model:
 ``` {r}
 # Create vectors containing AUC and accuracy of each round's model.
 RF_AUCs = c()
@@ -259,7 +268,7 @@ print(paste0("Average AUC for RF: ", mean(RF_AUCs)))
 print(paste0("Average accuracy of RF: ", mean(RF_accuracies)))
 ```
 
-Support Vector Machine (SVM):
+Support Vector Machine:
 ``` {r}
 # Create vectors containing AUC and accuracy of each round's model.
 SVM_AUCs = c()
