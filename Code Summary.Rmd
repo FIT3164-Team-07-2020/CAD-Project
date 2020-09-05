@@ -244,11 +244,12 @@ print(paste0("Average AUC for KNN: ", mean(KNN_AUCs)))
 print(paste0("Average accuracy of KNN: ", mean(KNN_accuracies)))
 ```
 
-Random forest model:
+Random forest:
 ``` {r}
 # Create vectors containing AUC and accuracy of each round's model.
 RF_AUCs = c()
 RF_accuracies = c()
+RF_importance = as.data.frame((matrix(ncol = 0, nrow = 40)))
 for(index in 1:5) {
   # Iterate through each train-test sets combination.
   train = get(paste0("ZAS.train", index))
@@ -265,7 +266,16 @@ for(index in 1:5) {
   conf_matrix = table(test$Cath, fitted_values, dnn = c("Actual", "Predicted"))
   accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
   RF_accuracies = append(RF_accuracies, accuracy)
+  # Calculate and store the features importance in each round.
+  current_RF_imp = as.data.frame(RF$importance)
+  RF_importance = cbind(RF_importance, current_RF_imp)
+  names(RF_importance)[length(names(RF_importance))] = paste0("Round_", index)
 }
+# Calculate, store and show each feature's average importance.
+RF_importance = as.data.frame(sort(apply(RF_importance, 1, mean),
+                                   decreasing = TRUE))
+colnames(RF_importance) = "Average Importance"
+print(RF_importance)
 # Calculate and print the average AUC and accuracy of 5-round KNN models.
 print(paste0("Average AUC for RF: ", mean(RF_AUCs)))
 print(paste0("Average accuracy of RF: ", mean(RF_accuracies)))

@@ -2,13 +2,23 @@ library(ROCR) #AUC
 library(kknn) #KNN
 library(randomForest) #RF
 library(e1071) #SVM
+library(caret) #filter feature selection
 
 
 
 rm(list = ls())
 ZAS_Original = read.csv("Z_Alizadeh_Sani_Dataset.csv")
 ZAS = ZAS_Original
-ZAS = ZAS[, !(colnames(ZAS) == "Exertional.CP")]
+# Find predictor features with zero / nearly-zero variances.
+# Record their column indexes.
+nzv_feature_indexes = nearZeroVar(ZAS[, !(colnames(ZAS) %in% c("Cad"))])
+# Print selected features information.
+print(paste0("Number of predictor features with zero or near-zero variances: ",
+             length(nzv_feature_indexes)))
+print(paste0("Following predictor features have zero or near-zero variances and should be removed: ",
+             toString(colnames(ZAS)[nzv_feature_indexes])))
+# Remove predictor features with zero / nearly-zero variances.
+ZAS = ZAS[, -nzv_feature_indexes]
 for (feature_index in 1:ncol(ZAS)) {
   # Get column name
   feature_name = colnames(ZAS)[feature_index]
@@ -45,9 +55,6 @@ contrasts(ZAS$Function.Class) = contr.treatment(4)
 # Region RWMA.
 ZAS$Region.RWMA = as.factor(ZAS$Region.RWMA)
 contrasts(ZAS$Region.RWMA) = contr.treatment(5)
-# BBB and VHD.
-ZAS$BBB = as.factor(ZAS$BBB)
-contrasts(ZAS$BBB) = contr.treatment(3)
 # VHD.
 ZAS$VHD = as.factor(ZAS$VHD)
 contrasts(ZAS$VHD) = contr.treatment(4)
@@ -140,6 +147,7 @@ print(paste0("Average accuracy of KNN: ", mean(KNN_accuracies)))
 # Create vectors containing AUC and accuracy of each round's model.
 RF_AUCs = c()
 RF_accuracies = c()
+RF_importance = as.data.frame((matrix(ncol = 0, nrow = 40)))
 for(index in 1:5) {
   # Iterate through each train-test sets combination.
   train = get(paste0("ZAS.train", index))
@@ -156,7 +164,16 @@ for(index in 1:5) {
   conf_matrix = table(test$Cath, fitted_values, dnn = c("Actual", "Predicted"))
   accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
   RF_accuracies = append(RF_accuracies, accuracy)
+  # Calculate and store the features importance in each round.
+  current_RF_imp = as.data.frame(RF$importance)
+  RF_importance = cbind(RF_importance, current_RF_imp)
+  names(RF_importance)[length(names(RF_importance))] = paste0("Round_", index)
 }
+# Calculate, store and show each feature's average importance.
+RF_importance = as.data.frame(sort(apply(RF_importance, 1, mean),
+                                   decreasing = TRUE))
+colnames(RF_importance) = "Average Importance"
+print(RF_importance)
 # Calculate and print the average AUC and accuracy of 5-round KNN models.
 print(paste0("Average AUC for RF: ", mean(RF_AUCs)))
 print(paste0("Average accuracy of RF: ", mean(RF_accuracies)))
