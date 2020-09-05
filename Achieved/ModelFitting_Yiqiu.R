@@ -174,6 +174,7 @@ RF_importance = as.data.frame(sort(apply(RF_importance, 1, mean),
                                    decreasing = TRUE))
 colnames(RF_importance) = "Average Importance"
 print(RF_importance)
+write.csv(RF_importance, "RandomForest.csv")
 # Calculate and print the average AUC and accuracy of 5-round KNN models.
 print(paste0("Average AUC for RF: ", mean(RF_AUCs)))
 print(paste0("Average accuracy of RF: ", mean(RF_accuracies)))
@@ -204,12 +205,3 @@ for(index in 1:5) {
 # Calculate and print the average AUC and accuracy of 5-round KNN models.
 print(paste0("Average AUC for SVM: ", mean(SVM_AUCs)))
 print(paste0("Average accuracy of SVM: ", mean(SVM_accuracies)))
-
-
-
-# Need to be talked about:
-# - How will the feature selection be integrated into model training?
-# - Is it possible to build final outcome as an interface which can be connected
-#   to both mobile app / website?
-# - How will the app / dataset read inputs from user?
-# - Make GitHub repository public / available to the teaching team.
