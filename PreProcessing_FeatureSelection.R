@@ -160,12 +160,7 @@ ZAS.test5 = ZAS[-training.rows,]
 # Cut 1 threshold.
 cut_1 = c("Q.Wave", "Obesity", "Systolic.Murmur", "LVH", "FH")
 ZAS.compressed1 = ZAS[, !(colnames(ZAS) %in% cut_1)]
-types1 = sapply(ZAS.compressed1, class)
-print(paste0("The number of factor typed features for 1st compressed version: ",
-             length(grep("factor", types1))))
-print(paste0("The number of numeric / integer typed features for 1st compressed version: ", 
-             length(grep("numeric", types1)) + length(grep("integer", types1))))
-print(types1)
+print(dim(ZAS.compressed1))
 # write.csv(ZAS.compressed1, "ZAS.compressed1.csv")
 
 # Cut 2 threshold.
@@ -173,10 +168,6 @@ cut_2 = c("Q.Wave", "Obesity", "Systolic.Murmur", "LVH", "FH", "Sex", "DLP",
           "Function.Class", "St.Depression", "DM", "Current.Smoker", "Dyspnea", 
           "VHD", "Nonanginal", "HDL", "Neut")
 ZAS.compressed2 = ZAS[, !(colnames(ZAS) %in% cut_2)]
-types2 = sapply(ZAS.compressed2, class)
-print(paste0("The number of factor typed features for 2nd compressed version: ",
-             length(grep("factor", types2))))
-print(paste0("The number of numeric / integer typed features for 2nd compressed version: ", 
-             length(grep("numeric", types2)) + length(grep("integer", types2))))
-print(types2)
+print(dim(ZAS.compressed2))
 # write.csv(ZAS.compressed2, "ZAS.compressed2.csv")
+```

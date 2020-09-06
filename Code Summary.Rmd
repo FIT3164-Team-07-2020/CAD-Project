@@ -20,6 +20,7 @@ Package Installation:
 ```{r eval=FALSE}
 # install.packages("")
 # install.packages("caret")
+# install.packages("ggplot2")
 # install.packages("ROCR")
 # install.packages("kknn")
 # install.packages("randomForest")
@@ -28,9 +29,10 @@ Package Installation:
 ```
 
 Package Loading:
-```{r}
+```{r, warning = FALSE}
 # library()
 library(caret) # This library is used to pre-process the data.
+library(ggplot2) # This library is used to plot any necessary chart / graph.
 library(ROCR) # This library is used to calculate AUC.
 library(kknn) # This library is used to help training the K-nearest Neighbors model.
 library(randomForest) # This library is used to help training the Random Forest model.
@@ -276,6 +278,14 @@ RF_importance = as.data.frame(sort(apply(RF_importance, 1, mean),
                                    decreasing = TRUE))
 colnames(RF_importance) = "Average Importance"
 print(RF_importance)
+# Plot the the importance of 10 most influential features in random forest.
+RF_ten_best_features = head(RF_importance, 10)
+hbc_rf = ggplot(data = RF_ten_best_features, 
+       aes(x = rownames(RF_ten_best_features),
+           y = RF_ten_best_features[,1])) +
+  geom_col()+ xlab("Feature") + ylab("Importance Score") + coord_flip() +
+  ggtitle("10 Most Influential Features in Random Forest")
+print(hbc_rf)
 # Calculate and print the average AUC and accuracy of 5-round KNN models.
 print(paste0("Average AUC for RF: ", mean(RF_AUCs)))
 print(paste0("Average accuracy of RF: ", mean(RF_accuracies)))
@@ -470,12 +480,7 @@ will be included in the final report.
 # Cut 1 threshold.
 cut_1 = c("Q.Wave", "Obesity", "Systolic.Murmur", "LVH", "FH")
 ZAS.compressed1 = ZAS[, !(colnames(ZAS) %in% cut_1)]
-types1 = sapply(ZAS.compressed1, class)
-print(paste0("The number of factor typed features for 1st compressed version: ",
-             length(grep("factor", types1))))
-print(paste0("The number of numeric / integer typed features for 1st compressed version: ", 
-             length(grep("numeric", types1)) + length(grep("integer", types1))))
-print(types1)
+print(dim(ZAS.compressed1))
 # write.csv(ZAS.compressed1, "ZAS.compressed1.csv")
 
 # Cut 2 threshold.
@@ -483,11 +488,6 @@ cut_2 = c("Q.Wave", "Obesity", "Systolic.Murmur", "LVH", "FH", "Sex", "DLP",
           "Function.Class", "St.Depression", "DM", "Current.Smoker", "Dyspnea", 
           "VHD", "Nonanginal", "HDL", "Neut")
 ZAS.compressed2 = ZAS[, !(colnames(ZAS) %in% cut_2)]
-types2 = sapply(ZAS.compressed2, class)
-print(paste0("The number of factor typed features for 2nd compressed version: ",
-             length(grep("factor", types2))))
-print(paste0("The number of numeric / integer typed features for 2nd compressed version: ", 
-             length(grep("numeric", types2)) + length(grep("integer", types2))))
-print(types2)
+print(dim(ZAS.compressed2))
 # write.csv(ZAS.compressed2, "ZAS.compressed2.csv")
 ```
