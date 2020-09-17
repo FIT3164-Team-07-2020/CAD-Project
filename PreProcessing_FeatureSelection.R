@@ -1,6 +1,7 @@
-# The code in this R script is exactly the same as Section 1: Data Preparation
-# and Understanding. The aim of creating this file is to more easily copy and
-# paste preprocessing codes to later scripts if necessary.
+# The code in this R script contains part of Section 1: Data Preparation and
+# Understanding & Section 3: Feature selection from ensemble models.. The aim of
+# creating this file is to more easily copy and paste preprocessing codes to 
+# later scripts if necessary.
 
 # Load necessary package(s).
 library(caret) # This library is used to pre-process the data.
@@ -115,47 +116,6 @@ print(paste0("The number of numeric / integer typed features: ",
              length(grep("numeric", types)) + length(grep("integer", types))))
 print(types)
 
-# Split the dataset into train and test sets (in 70%-30% ratio).
-# Set the seed to make all teammates have the same random dataset.
-set.seed(3164)
-# Get 70% of the dataset to be training dataset.
-training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
-ZAS.train1 = ZAS[training.rows,]
-# The rest of rows are testing dataset.
-ZAS.test1 = ZAS[-training.rows,]
-
-# Set the seed to make all teammates have the same random dataset.
-set.seed(070707)
-# Get 70% of the dataset to be training dataset.
-training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
-ZAS.train2 = ZAS[training.rows,]
-# The rest of rows are testing dataset.
-ZAS.test2 = ZAS[-training.rows,]
-
-# Set the seed to make all teammates have the same random dataset.
-set.seed(31643164)
-# Get 70% of the dataset to be training dataset.
-training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
-ZAS.train3 = ZAS[training.rows,]
-# The rest of rows are testing dataset.
-ZAS.test3 = ZAS[-training.rows,]
-
-# Set the seed to make all teammates have the same random dataset.
-set.seed(13653)
-# Get 70% of the dataset to be training dataset.
-training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
-ZAS.train4 = ZAS[training.rows,]
-# The rest of rows are testing dataset.
-ZAS.test4 = ZAS[-training.rows,]
-
-# Set the seed to make all teammates have the same random dataset.
-set.seed(1654221)
-# Get 70% of the dataset to be training dataset.
-training.rows = sample(1:nrow(ZAS), 0.7*nrow(ZAS))
-ZAS.train5 = ZAS[training.rows,]
-# The rest of rows are testing dataset.
-ZAS.test5 = ZAS[-training.rows,]
-
 # Feature selection from ensemble models.
 # Cut 1 threshold.
 cut_1 = c("Q.Wave", "Obesity", "Systolic.Murmur", "LVH", "FH")
@@ -169,5 +129,3 @@ cut_2 = c("Q.Wave", "Obesity", "Systolic.Murmur", "LVH", "FH", "Sex", "DLP",
           "VHD", "Nonanginal", "HDL", "Neut")
 ZAS.compressed2 = ZAS[, !(colnames(ZAS) %in% cut_2)]
 print(dim(ZAS.compressed2))
-# write.csv(ZAS.compressed2, "ZAS.compressed2.csv")
-```

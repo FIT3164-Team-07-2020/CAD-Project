@@ -72,7 +72,7 @@ Remove predictor features with zero / nearly zero variances (the reason is that 
 ```{r}
 # Find predictor features with zero / nearly-zero variances.
 # Record their column indexes.
-nzv_feature_indexes = nearZeroVar(ZAS[, !(colnames(ZAS) %in% c("Cad"))])
+nzv_feature_indexes = nearZeroVar(ZAS[, !(colnames(ZAS) %in% c("Cath"))])
 # Print selected features information.
 print(paste0("Number of predictor features with zero or near-zero variances: ",
              length(nzv_feature_indexes)))
@@ -258,8 +258,8 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   RF = randomForest(Cath~., data = train)
-  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
-  fitted_values = predict(RF, test_no_cad)
+  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
+  fitted_values = predict(RF, test_no_cath)
   # Calculate and store the AUC.
   pred = prediction(as.numeric(fitted_values), test$Cath)
   AUC = performance(pred, 'auc')@y.values
@@ -302,8 +302,8 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   SVM = svm(Cath~., data = train)
-  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
-  fitted_values = predict(SVM, test_no_cad)
+  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
+  fitted_values = predict(SVM, test_no_cath)
   # Calculate and store the AUC of each round's model.
   pred = prediction(as.numeric(fitted_values), test$Cath)
   AUC = performance(pred, 'auc')@y.values
@@ -394,8 +394,8 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   boost = boosting(Cath~., data = train)
-  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
-  boostpredict = predict.boosting(boost, newdata = test_no_cad)
+  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
+  boostpredict = predict.boosting(boost, newdata = test_no_cath)
   #Calculate accuracy of the model
   n = sum(boostpredict$confusion)
   x = diag(boostpredict$confusion)
@@ -425,8 +425,8 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   gradb = train(Cath~., data = train, method = "gbm", verbose = FALSE)
-  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
-  gradbpredict = predict(gradb, test_no_cad)
+  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
+  gradbpredict = predict(gradb, test_no_cath)
   #Calculate accuracy
   conf_matrix = table(test$Cath, gradbpredict, dnn = c("Actual", "Predicted"))
   accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
@@ -454,8 +454,8 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   bagg = bagging(Cath~., data = train)
-  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
-  baggpredict = predict.bagging(bagg, newdata = test_no_cad)
+  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
+  baggpredict = predict.bagging(bagg, newdata = test_no_cath)
   #Calculate accuracy of the model
   n = sum(baggpredict$confusion)
   x = diag(baggpredict$confusion)

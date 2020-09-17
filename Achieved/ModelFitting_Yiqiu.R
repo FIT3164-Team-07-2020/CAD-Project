@@ -11,7 +11,7 @@ ZAS_Original = read.csv("Z_Alizadeh_Sani_Dataset.csv")
 ZAS = ZAS_Original
 # Find predictor features with zero / nearly-zero variances.
 # Record their column indexes.
-nzv_feature_indexes = nearZeroVar(ZAS[, !(colnames(ZAS) %in% c("Cad"))])
+nzv_feature_indexes = nearZeroVar(ZAS[, !(colnames(ZAS) %in% c("Cath"))])
 # Print selected features information.
 print(paste0("Number of predictor features with zero or near-zero variances: ",
              length(nzv_feature_indexes)))
@@ -154,8 +154,8 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   RF = randomForest(Cath~., data = train)
-  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
-  fitted_values = predict(RF, test_no_cad)
+  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
+  fitted_values = predict(RF, test_no_cath)
   # Calculate and store the AUC.
   pred = prediction(as.numeric(fitted_values), test$Cath)
   AUC = performance(pred, 'auc')@y.values
@@ -191,8 +191,8 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   SVM = svm(Cath~., data = train)
-  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
-  fitted_values = predict(SVM, test_no_cad)
+  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
+  fitted_values = predict(SVM, test_no_cath)
   # Calculate and store the AUC of each round's model.
   pred = prediction(as.numeric(fitted_values), test$Cath)
   AUC = performance(pred, 'auc')@y.values
