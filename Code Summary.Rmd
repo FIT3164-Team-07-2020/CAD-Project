@@ -39,6 +39,8 @@ library(randomForest) # This library is used to help training the Random Forest 
 library(e1071) # This library is used to help training the Support Vector Machine model.
 library(tree) #This library is used to build decision tree.
 library(adabag) # This library is used to build adaptive boosting and bagging models
+library(mltools) #Primarily used for one hot encoding.
+library(data.table) #Used for converting data frame to a data.table, which makes it  easier to perform one hot encoding.
 ```
 
 ## Section 1: Data Preparation and Understanding.
@@ -124,21 +126,21 @@ ZAS$Cath[ZAS$Cath == "Normal"] = 0
 ZAS$Cath[ZAS$Cath == "Cad"] = 1
 ```
 
-Convert values of features  (Function Class, Region RWMA and VHD) with more than two categories to dummy.
+Convert values of features (Function Class, Region RWMA and VHD) with more than two categories to dummy variables via one hot encoding.
 ```{r}
-# Function Class.
+#Convert all to factor first so the variables are the same class.
 ZAS$Function.Class = as.factor(ZAS$Function.Class)
-contrasts(ZAS$Function.Class) = contr.treatment(4)
-
-# Region RWMA.
 ZAS$Region.RWMA = as.factor(ZAS$Region.RWMA)
-contrasts(ZAS$Region.RWMA) = contr.treatment(5)
-
-# Note that BBB is removed before because of its near-zero variance.
-
-# VHD.
 ZAS$VHD = as.factor(ZAS$VHD)
-contrasts(ZAS$VHD) = contr.treatment(4)
+
+#Converts ZAS to a data.table, which is just a convenient format for performing one hot encoding with the mltools package.
+ZAS = data.table(ZAS)
+
+#One hot encoding using mltools package.
+ZAS = one_hot(ZAS, cols = c('Function.Class', 'Region.RWMA', 'VHD'))
+
+#Convert back to data frame
+ZAS = data.frame(ZAS)
 
 ```
 
@@ -161,7 +163,7 @@ for (feature_index in 1:ncol(ZAS)) {
 }
 ```
 
-Check the current type of each feature to ensure they are in expected: there should be 34 categorical features (which should be all factor typed) and 21 quantitative features (which should be either numeric or integer typed).
+Check the current type of each feature to ensure they are in expected: there should be 30 categorical features (which should be all factor typed) and 21 quantitative features (which should be either numeric or integer typed).
 ```{r}
 types = sapply(ZAS, class)
 print(paste0("The number of factor typed features: ",
@@ -251,7 +253,7 @@ Random forest:
 # Create vectors containing AUC and accuracy of each round's model.
 RF_AUCs = c()
 RF_accuracies = c()
-RF_importance = as.data.frame((matrix(ncol = 0, nrow = 40)))
+RF_importance = as.data.frame((matrix(ncol = 0, nrow = 50)))
 for(index in 1:5) {
   # Iterate through each train-test sets combination.
   train = get(paste0("ZAS.train", index))
@@ -383,19 +385,21 @@ cat(paste0("Average accuracy of decision tree: ", round(mean(Tree_accuracies),di
 
 Boosting (Adaptive)
 
-```{r, message=FALSE, warning=FALSE}
+```{r}
 #Boosting
 # Create vectors containing AUC and accuracy of each round's model.
 Boost_AUCs = c()
 Boost_accuracies = c()
+boost_importance = as.data.frame((matrix(ncol = 0, nrow = 50)))
+
 for(index in 1:5) {
   # Iterate through each train-test sets combination.
   train = get(paste0("ZAS.train", index))
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   boost = boosting(Cath~., data = train)
-  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
-  boostpredict = predict.boosting(boost, newdata = test_no_cath)
+  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
+  boostpredict = predict.boosting(boost, newdata = test_no_cad)
   #Calculate accuracy of the model
   n = sum(boostpredict$confusion)
   x = diag(boostpredict$confusion)
@@ -405,8 +409,21 @@ for(index in 1:5) {
   boostprob = prediction(boostpredict$prob[,2], test$Cath)
   AUC = performance(boostprob, "auc")@y.values
   Boost_AUCs = append(Boost_AUCs, as.numeric(AUC))
-  
+    # Calculate and store the features importance in each round.
+  current_boost_imp = as.data.frame(boost$importance)
+  boost_importance = cbind(boost_importance, current_boost_imp)
+  names(boost_importance)[length(names(boost_importance))] = paste0("Round_", index)
 }
+# Calculate, store and show each feature's average importance.
+boost_importance = as.data.frame(sort(apply(boost_importance, 1, mean), decreasing = TRUE))
+colnames(boost_importance) = "Average Importance"
+print(boost_importance)
+# Plot the the importance of 10 most influential features in boosting.
+boost_ten_best_features = head(boost_importance, 10)
+hbc_boost = ggplot(data = boost_ten_best_features, aes(x = rownames(boost_ten_best_features), y = boost_ten_best_features[,1])) +
+  geom_col()+ xlab("Feature") + ylab("Importance Score") + coord_flip() +
+  ggtitle("10 Most Influential Features in boosting")
+print(hbc_boost)
 print(paste0("Average AUC for boosting: ", mean(Boost_AUCs)))
 print(paste0("Average accuracy of boosting: ", mean(Boost_accuracies)))
 
@@ -425,8 +442,8 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   gradb = train(Cath~., data = train, method = "gbm", verbose = FALSE)
-  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
-  gradbpredict = predict(gradb, test_no_cath)
+  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
+  gradbpredict = predict(gradb, test_no_cad)
   #Calculate accuracy
   conf_matrix = table(test$Cath, gradbpredict, dnn = c("Actual", "Predicted"))
   accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
@@ -441,21 +458,23 @@ print(paste0("Average accuracy of Gradient Boosting: ", mean(gradb_accuracies)))
 
 ```
 
+
 Bagging
 
-```{r message=FALSE, warning=FALSE}
+```{r}
 #Bagging
 # Create vectors containing AUC and accuracy of each round's model.
 Bagg_AUCs = c()
 Bagg_accuracies = c()
+bag_importance = as.data.frame((matrix(ncol = 0, nrow = 50)))
 for(index in 1:5) {
   # Iterate through each train-test sets combination.
   train = get(paste0("ZAS.train", index))
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   bagg = bagging(Cath~., data = train)
-  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
-  baggpredict = predict.bagging(bagg, newdata = test_no_cath)
+  test_no_cad = test[, !(colnames(test) %in% c("Cad"))]
+  baggpredict = predict.bagging(bagg, newdata = test_no_cad)
   #Calculate accuracy of the model
   n = sum(baggpredict$confusion)
   x = diag(baggpredict$confusion)
@@ -465,12 +484,25 @@ for(index in 1:5) {
   baggprob = prediction(baggpredict$prob[,2], test$Cath)
   AUC = performance(baggprob, "auc")@y.values
   Bagg_AUCs = append(Bagg_AUCs, as.numeric(AUC))
-  
+  # Calculate and store the features importance in each round.
+  current_bag_imp = as.data.frame(bagg$importance)
+  bag_importance = cbind(bag_importance, current_bag_imp)
+  names(bag_importance)[length(names(bag_importance))] = paste0("Round_", index)
 }
+# Calculate, store and show each feature's average importance.
+bag_importance = as.data.frame(sort(apply(bag_importance, 1, mean), decreasing = TRUE))
+colnames(bag_importance) = "Average Importance"
+print(bag_importance)
+# Plot the the importance of 10 most influential features in bagging.
+bag_ten_best_features = head(bag_importance, 10)
+hbc_bag = ggplot(data = bag_ten_best_features, aes(x = rownames(bag_ten_best_features), y = bag_ten_best_features[,1])) +
+  geom_col()+ xlab("Feature") + ylab("Importance Score") + coord_flip() +
+  ggtitle("10 Most Influential Features in Bagging")
+print(hbc_bag)
 print(paste0("Average AUC for Bagging: ", mean(Bagg_AUCs)))
 print(paste0("Average accuracy of Bagging: ", mean(Bagg_accuracies)))
-
 ```
+
 
 ## Section 3: Feature selection from ensemble models.
 
@@ -484,9 +516,7 @@ print(dim(ZAS.compressed1))
 # write.csv(ZAS.compressed1, "ZAS.compressed1.csv")
 
 # Cut 2 threshold.
-cut_2 = c("Q.Wave", "Obesity", "Systolic.Murmur", "LVH", "FH", "Sex", "DLP",
-          "Function.Class", "St.Depression", "DM", "Current.Smoker", "Dyspnea", 
-          "VHD", "Nonanginal", "HDL", "Neut")
+cut_2 = c("Q.Wave", "Obesity", "Systolic.Murmur", "LVH", "FH", "Sex", "DLP", "Function.Class_0", "Function.Class_1", "Function.Class_2", "Function.Class_3", "St.Depression", "DM", "Current.Smoker", "Dyspnea", "VHD_mild", "VHD_Moderate", "VHD_N", "VHD_Severe", "Nonanginal", "HDL", "Neut")
 ZAS.compressed2 = ZAS[, !(colnames(ZAS) %in% cut_2)]
 print(dim(ZAS.compressed2))
 # write.csv(ZAS.compressed2, "ZAS.compressed2.csv")
