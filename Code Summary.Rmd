@@ -26,21 +26,25 @@ Package Installation:
 # install.packages("randomForest")
 # install.packages("e1071")
 # install.packages("adabag")
+# install.packages("mltools")
+# install.packages("data.table")
+# install.packages("neuralnet")
 ```
 
 Package Loading:
 ```{r, warning = FALSE}
 # library()
-library(caret) # This library is used to pre-process the data.
-library(ggplot2) # This library is used to plot any necessary chart / graph.
-library(ROCR) # This library is used to calculate AUC.
-library(kknn) # This library is used to help training the K-nearest Neighbors model.
-library(randomForest) # This library is used to help training the Random Forest model.
-library(e1071) # This library is used to help training the Support Vector Machine model.
-library(tree) #This library is used to build decision tree.
-library(adabag) # This library is used to build adaptive boosting and bagging models
-library(mltools) #Primarily used for one hot encoding.
-library(data.table) #Used for converting data frame to a data.table, which makes it  easier to perform one hot encoding.
+library(caret) # Used to pre-process the data.
+library(ggplot2) # Used to plot any necessary chart / graph.
+library(ROCR) # Used to calculate AUC.
+library(kknn) # Used to help training the K-nearest Neighbors model.
+library(randomForest) # Used to help training the Random Forest model.
+library(e1071) # Used to help training the Support Vector Machine model.
+library(tree) # Used to build decision tree.
+library(adabag) # Used to build adaptive boosting and bagging models
+library(mltools) # Primarily used for one hot encoding.
+library(data.table) # Used for converting data frame to a data.table, which makes it easier to perform one hot encoding.
+library(neuralnet) # Used to help training the neural network.
 ```
 
 ## Section 1: Data Preparation and Understanding.
@@ -128,18 +132,18 @@ ZAS$Cath[ZAS$Cath == "Cad"] = 1
 
 Convert values of features (Function Class, Region RWMA and VHD) with more than two categories to dummy variables via one hot encoding.
 ```{r}
-#Convert all to factor first so the variables are the same class.
+# Convert all to factor first so the variables are the same class.
 ZAS$Function.Class = as.factor(ZAS$Function.Class)
 ZAS$Region.RWMA = as.factor(ZAS$Region.RWMA)
 ZAS$VHD = as.factor(ZAS$VHD)
 
-#Converts ZAS to a data.table, which is just a convenient format for performing one hot encoding with the mltools package.
+# Converts ZAS to a data.table, which is just a convenient format for performing one hot encoding with the mltools package.
 ZAS = data.table(ZAS)
 
-#One hot encoding using mltools package.
+# One hot encoding using mltools package.
 ZAS = one_hot(ZAS, cols = c('Function.Class', 'Region.RWMA', 'VHD'))
 
-#Convert back to data frame
+# Convert back to data frame
 ZAS = data.frame(ZAS)
 
 ```
@@ -235,7 +239,7 @@ for(index in 1:5) {
   KNN = kknn(Cath~., train, test)
   fitted_values = fitted(KNN)
   # Calculate and store the AUC.
-  pred = prediction(as.numeric(fitted_values), test$Cath)
+  pred = ROCR::prediction(as.numeric(fitted_values), test$Cath)
   AUC = performance(pred, 'auc')@y.values
   KNN_AUCs = append(KNN_AUCs, as.numeric(AUC))
   # Calculate and store the accuracy.
@@ -263,7 +267,7 @@ for(index in 1:5) {
   test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
   fitted_values = predict(RF, test_no_cath)
   # Calculate and store the AUC.
-  pred = prediction(as.numeric(fitted_values), test$Cath)
+  pred = ROCR::prediction(as.numeric(fitted_values), test$Cath)
   AUC = performance(pred, 'auc')@y.values
   RF_AUCs = append(RF_AUCs, as.numeric(AUC))
   # Calculate and store the accuracy.
@@ -307,7 +311,7 @@ for(index in 1:5) {
   test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
   fitted_values = predict(SVM, test_no_cath)
   # Calculate and store the AUC of each round's model.
-  pred = prediction(as.numeric(fitted_values), test$Cath)
+  pred = ROCR::prediction(as.numeric(fitted_values), test$Cath)
   AUC = performance(pred, 'auc')@y.values
   SVM_AUCs = append(SVM_AUCs, as.numeric(AUC))
   # Calculate and store the accuracy of each round's model.
@@ -406,7 +410,7 @@ for(index in 1:5) {
   accuracy = sum(x)/n
   Boost_accuracies = append(Boost_accuracies, accuracy)
   #Get AUC
-  boostprob = prediction(boostpredict$prob[,2], test$Cath)
+  boostprob = ROCR::prediction(boostpredict$prob[,2], test$Cath)
   AUC = performance(boostprob, "auc")@y.values
   Boost_AUCs = append(Boost_AUCs, as.numeric(AUC))
     # Calculate and store the features importance in each round.
@@ -449,7 +453,7 @@ for(index in 1:5) {
   accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
   gradb_accuracies = append(gradb_accuracies, accuracy)
   #Get AUC
-  gradbprob = prediction(as.numeric(gradbpredict), test$Cath)
+  gradbprob = ROCR::prediction(as.numeric(gradbpredict), test$Cath)
   AUC = performance(gradbprob, "auc")@y.values
   gradb_AUCs = append(gradb_AUCs, as.numeric(AUC))
 }
@@ -481,7 +485,7 @@ for(index in 1:5) {
   accuracy = sum(x)/n
   Bagg_accuracies = append(Bagg_accuracies, accuracy)
   #Get AUC
-  baggprob = prediction(baggpredict$prob[,2], test$Cath)
+  baggprob = ROCR::prediction(baggpredict$prob[,2], test$Cath)
   AUC = performance(baggprob, "auc")@y.values
   Bagg_AUCs = append(Bagg_AUCs, as.numeric(AUC))
   # Calculate and store the features importance in each round.
@@ -520,4 +524,108 @@ cut_2 = c("Q.Wave", "Obesity", "Systolic.Murmur", "LVH", "FH", "Sex", "DLP", "Fu
 ZAS.compressed2 = ZAS[, !(colnames(ZAS) %in% cut_2)]
 print(dim(ZAS.compressed2))
 # write.csv(ZAS.compressed2, "ZAS.compressed2.csv")
+```
+
+
+## Section 4: Model Optimisation.
+
+In this section, the best 4 models (Bagging, Boosting, SVM and Random Forest)
+training in Section 2 will be further optimized. Additionally, a neural network
+will be trained and evaluated in this section using the feature-selected data.  
+
+Neural Network
+```{r}
+# Train and test sets with threshold 1 applied.
+set.seed(316407)
+training.rows1 = sample(1:nrow(ZAS.compressed1), 0.7*nrow(ZAS.compressed1))
+train1 = ZAS.compressed1[training.rows1,]
+test1 = ZAS.compressed1[-training.rows1,]
+
+# Train and test sets with threshold 2 applied.
+set.seed(316407)
+training.rows2 = sample(1:nrow(ZAS.compressed2), 0.7*nrow(ZAS.compressed2))
+train2 = ZAS.compressed2[training.rows2,]
+test2 = ZAS.compressed2[-training.rows2,]
+
+# Since the neuralnet() function can only deal with quantitative variables, all 
+# qualitative variables need to be converted into dummy variables.
+# Threshold 1.
+train1_dummy = model.matrix(~., data = train1)[,-1]
+test1_dummy = model.matrix(~., data = test1)[,-1]
+# Threshold 2.
+train2_dummy = model.matrix(~., data = train2)[,-1]
+test2_dummy = model.matrix(~., data = test2)[,-1]
+
+# According to thumb of rules from below article, set different numbers of
+# hidden layers and neurons.
+# https://www.heatonresearch.com/2017/06/01/hidden-layers.html
+# Number of hidden layers.
+n_hlayers = 3
+# Number of neurons for threshold 1.
+input_size1 = ncol(train1)
+n_hneurons1 = as.integer(c(0.5*input_size1, 2/3*input_size1,
+                          input_size1, 2*input_size1))
+# Number of neurons for threshold 2.
+input_size2 = ncol(train2)
+n_hneurons2 = as.integer(c(0.5*input_size2, 2/3*input_size2,
+                           input_size2, 2*input_size2))
+
+# For each combination of hidden layers & neurons, train the neural network and 
+# evaluate the ROC / AUC.
+# Threshold 1.
+for (hlayer in 1:n_hlayers) {
+  for (hneuron_index in 1:length(n_hneurons1)) {
+    # Generate the tuned parameters for this iteration.
+    hiddens = rep(n_hneurons1[hneuron_index], times = hlayer)
+    # To reduce the randomness of the training, set the random seed.
+    set.seed(316407)
+    # Train the neural network.
+    nnet = neuralnet(Cath1~., train1_dummy, hidden = hiddens, 
+                     linear.output = FALSE)
+    # Feed the test data into trained model to predict.
+    test1_no_cad = test1_dummy[, !(colnames(test1_dummy) %in% c("Cath1"))]
+    fitted_values = round(predict(nnet, test1_no_cad))
+    pred = ROCR::prediction(as.numeric(fitted_values), test1$Cath)
+    # Calculate the AUC and confusion matrix.
+    AUC = performance(pred, 'auc')@y.values
+    conf_matrix = table(test1$Cath, fitted_values,
+                        dnn = c("Actual", "Predicted"))
+    # Print the result.
+    print("Threshold1: ")
+    print(paste0("Number of hidden layers: ",
+                 hlayer, 
+                 "; Number of neurons in each hidden layer: ", 
+                 n_hneurons1[hneuron_index]))
+    print(paste0("AUC: ", AUC))
+    print(conf_matrix)
+  }
+}
+# Threshold 2.
+for (hlayer in 1:n_hlayers) {
+  for (hneuron_index in 1:length(n_hneurons2)) {
+    # Generate the tuned parameters for this iteration.
+    hiddens = rep(n_hneurons2[hneuron_index], times = hlayer)
+    # To reduce the randomness of the training, set the random seed.
+    set.seed(316407)
+    # Train the neural network.
+    nnet = neuralnet(Cath1~., train2_dummy, hidden = hiddens, 
+                     linear.output = FALSE)
+    # Feed the test data into trained model to predict.
+    test2_no_cad = test2_dummy[, !(colnames(test2_dummy) %in% c("Cath1"))]
+    fitted_values = round(predict(nnet, test2_no_cad))
+    pred = ROCR::prediction(as.numeric(fitted_values), test2$Cath)
+    # Calculate the AUC and confusion matrix.
+    AUC = performance(pred, 'auc')@y.values
+    conf_matrix = table(test2$Cath, fitted_values,
+                        dnn = c("Actual", "Predicted"))
+    # Print the result.
+    print("Threshold2: ")
+    print(paste0("Number of hidden layers: ",
+                 hlayer, 
+                 "; Number of neurons in each hidden layer: ", 
+                 n_hneurons2[hneuron_index]))
+    print(paste0("AUC: ", AUC))
+    print(conf_matrix)
+  }
+}
 ```
