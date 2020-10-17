@@ -156,14 +156,22 @@ fluidPage(
     
     # This button appears only when user inputs all valid values.
     # Clicking it will begin the ML model analysis process.
-    conditionalPanel(condition = "output.valid",
+    conditionalPanel(condition = "output.InputValidation",
                      actionButton("BeginAnalysis", "Confirm and start analysis")
     )
   ),
   
   # Print the text output (in a gray box) to users in the main area.
   mainPanel(
-    verbatimTextOutput('valid'),
+    # Output the input summary and any possible input invalid message.
+    verbatimTextOutput('InputValidation'),
+    
+    # # Output the features as well as the types summary
+    # # (for testing and debugging only).
+    # tableOutput("FeaturesDF"),
+    # verbatimTextOutput('DFTypeSummary'),
+    
+    # Output the analysis result.
     verbatimTextOutput('AnalysisResult')
   )
 )

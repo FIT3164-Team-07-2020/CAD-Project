@@ -1,0 +1,24 @@
+---
+title: "Shiny_as_RMarkdown"
+author: "FIT 3164 Team 07"
+date: "18/10/2020"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Embedded Shiny Application.
+
+It seems that embedding shiny app into RMD is not that a good idea:
+
+```{r tabsets, echo=FALSE}
+shinyAppDir('Shinyapps_IO')
+```
+
+Is it acceptable to let users run shiny app directly by opening the file and 
+clicking the button?
+
+

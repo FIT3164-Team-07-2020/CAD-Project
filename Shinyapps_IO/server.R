@@ -1,71 +1,14 @@
 library(shiny)
+# Boost model needs this library to perform prediction.
+library(adabag)
 
-# # Create data frame used to store necessary features.
-# create_df = function(){
-#   features = c("Age", "Weight", "Length", "BMI", "HTN", "BP", "PR",
-#                "Typical.Chest.Pain", "Atypical", "Tinversion", "FBS", "CR", "TG", 
-#                "LDL", "BUN", "ESR", "HB", "K", "Na", "WBC", "Lymph", "PLT", 
-#                "EF.TTE", "Region.RWMA_0", "Region.RWMA_1", "Region.RWMA_2",
-#                "Region.RWMA_3", "Region.RWMA_4")
-#   features_with_nas = as.data.frame( matrix(ncol = length(features), nrow=0) )
-#   features_with_nas = rbind(features_with_nas,
-#                             data.frame(t(rep(c(NA), times = 28))))
-#   colnames(features_with_nas) = features
-#   features_with_values = features_with_nas
-#   return(features_with_values)
-# }
-# 
-# # Define the function used to process and add categorical data into 
-# # features_with_values dataframe.
-# cat_data_process = function(df, HTN, ChestPain, Tinversion, Region.RWMA){
-#   # Convert HTN Y/N values to 0/1 and add into features_with_values dataframe.
-#   if (HTN == 'Yes') {
-#     df$HTN = 1
-#   }
-#   else {
-#     df$HTN = 0
-#   }
-#   # According to the user's chest pain input, set values for Typical.Chest.Pain
-#   # and Atypical features.
-#   df$Typical.Chest.Pain = 0
-#   df$Atypical = 0
-#   if (ChestPain == 'Typical') {
-#     df$Typical.Chest.Pain = 1
-#   }
-#   else if (ChestPain == 'Atypical'){
-#     df$Atypical = 1
-#   }
-#   # Convert Tinversion Y/N values to 0/1 and add into features_with_values
-#   # dataframe.
-#   if (Tinversion == 'Yes') {
-#     df$Tinversion = 1
-#   }
-#   else {
-#     df$Tinversion = 0
-#   }
-#   # According to the user's Region RWMA input, set values for Region.RWMA_X
-#   # features.
-#   df$Region.RWMA_0 = 0
-#   df$Region.RWMA_1 = 0
-#   df$Region.RWMA_2 = 0
-#   df$Region.RWMA_3 = 0
-#   df$Region.RWMA_4 = 0
-#   selectedRR = paste0('Region.RWMA_', toString(Region.RWMA))
-#   df[, (colnames(ZAS) %in% selectedRR)] = 1
-#   return(object)
-# }
-# 
-# 
-# 
-# myfunction <- function(arg1, arg2, ... ){
-#   statements
-#   return(object)
-# }
+# Load the boosting machine learning model.
+load('boost_model.rdata')
 
 function(input, output) {
   # FeatureInfo session will check user's inputs' validation as well as output
   # a feature summary for user to double check.
-  output$valid <- renderText({
+  output$InputValidation <- renderText({
     # Check validation.
     validate(
      need(input$Age > 0, 'Age should be greater then 0 year.'),
@@ -91,9 +34,9 @@ function(input, output) {
     paste0(
     "Summary of inputs, please double check:\n",
     "Age: ", input$Age, " years;\n",
-    "Wight: ", input$Weight, " kg;\n",
-    "Length: ", input$Length, " cm;\n",
-    "BMI: ", (input$Weight / (input$Length/100)^2), " kg/m^2;\n",
+    "Weight: ", input$Weight, " kg;\n",
+    "Height: ", input$Length, " cm;\n",
+    "BMI: ", (input$Weight / (input$Length/100)^2), " kg/(m^2) (This value is auto-calculated according to inputs Weight and Height);\n",
     "HTN: ", input$HTN, ";\n",
     "BP: ", input$BP, " mmHg;\n",
     "PR: ", input$PR, " ppm;\n",
@@ -116,12 +59,80 @@ function(input, output) {
     )})
   
   # Since the user inputs all values, the confirm button will appear on the  UI.
-  outputOptions(output, "valid", suspendWhenHidden = FALSE)
+  outputOptions(output, "InputValidation", suspendWhenHidden = FALSE)
   
   # When the user click the action button, analysis process will begin.
   observeEvent(input$BeginAnalysis, {
-    output$AnalysisResult <- renderText(
-      "Here will be the analysis coding and results."
+    
+    # Create the dataframe which will be feed into the ML model.
+    
+    # Note that for all non-numerical features, corresponding reactive factor
+    # values are generated and used to replace the original input values. This 
+    # type convention step is necessary for the ML model used later.
+    
+    features = data.frame(
+      Age = input$Age,
+      Weight = input$Weight,
+      Length = input$Length,
+      BMI = ((input$Weight / (input$Length/100)^2)),
+      
+      # According to HTN Y/N inputs, generate corresponding factor values.
+      HTN = reactive(factor(if (input$HTN == 'Yes') 1 else 0))(),
+      
+      BP = input$BP,
+      PR = input$PR,
+      
+      # According to ChestPain None / Typical / Atypical inputs, generate
+      # corresponding factor values.
+      Typical.Chest.Pain = reactive(factor(if (input$ChestPain == 'Typical') 1
+                                           else 0))(),
+      Atypical = reactive(factor(if (input$ChestPain == 'Atypical') 1
+                                 else 0))(),
+      
+      # According to Tinversion Y/N inputs, generate corresponding factor
+      # values.
+      Tinversion = reactive(factor(if (input$Tinversion == 'Yes') 1 else 0))(),
+      
+      FBS = input$FBS,
+      CR = input$CR,
+      TG = input$TG,
+      LDL = input$LDL,
+      BUN = input$BUN,
+      ESR = input$ESR,
+      HB = input$HB,
+      K = input$K,
+      Na = input$Na,
+      WBC = input$WBC,
+      Lymph = input$Lymph,
+      PLT = (input$PLT * 1000),
+      EF.TTE = input$EF.TTE,
+      
+      # According to Region.RWMA 0/1/2/3/4 inputs, generate corresponding factor
+      # values.
+      Region.RWMA_0 = reactive(factor(if (input$Region.RWMA == 0) 1 else 0))(),
+      Region.RWMA_1 = reactive(factor(if (input$Region.RWMA == 1) 1 else 0))(),
+      Region.RWMA_2 = reactive(factor(if (input$Region.RWMA == 2) 1 else 0))(),
+      Region.RWMA_3 = reactive(factor(if (input$Region.RWMA == 3) 1 else 0))(),
+      Region.RWMA_4 = reactive(factor(if (input$Region.RWMA == 4) 1 else 0))()
     )
+    
+    # # Output the features as well as the types summary
+    # # (for testing and debugging only).
+    # output$FeaturesDF = renderTable(features)
+    # output$DFTypeSummary = renderText(
+    #   sapply(features, class)
+    # )
+    
+    # Use the pre-trained ML model to predict on the input data and output the preducted result.
+    predicted = predict.boosting(boost, features)
+    output$AnalysisResult = renderText({
+      paste0(
+        'By using pre-trained boosting model to analyse the input data: \n',
+        '- The predicted probablity of the class result No is: ', predicted$prob[1], "\n",
+        '- The predicted probablity of the class result Yes is: ', predicted$prob[2], "\n", 
+        '- The predicted class result is: ', reactive(if (predicted$class == '1') 'Yes' else 'No')(), "\n",
+        '(Yes means likely to have coronary artery disease, No means not likely to have coronary artery disease)', "\n",
+        'Note that this is just the analysis result of a machine learning model, which is just for reference and not guaranteed to have 100% accuracy.')
+    })
   })
 }
