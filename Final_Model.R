@@ -35,7 +35,6 @@ print(paste0("Following predictor features have zero or near-zero variances and
              toString(colnames(ZAS)[nzv_feature_indexes])))
 # Remove predictor features with zero / nearly-zero variances.
 ZAS = ZAS[, -nzv_feature_indexes]
-
 # Convert all "factor" variables into "character" type.
 # This makes it easier to convert them into numeric values.
 for (feature_index in 1:ncol(ZAS)) {
@@ -136,6 +135,9 @@ ZAS.test2 = ZAS.compressed2[-training.rows,]
 
 #Train the optimised boosting model
 boost = adabag::boosting(Cath~., data = ZAS.train2, mfinal = 40)
+# # Save the best model as an individual data file so it can be re-loaded and 
+# # used later for the final webpage.
+# save(boost, file = "boost_model.Rdata")
 boostpredict = predict.boosting(boost, newdata = ZAS.test2)
 #Calculate accuracy of the model
 n = sum(boostpredict$confusion)

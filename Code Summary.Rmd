@@ -521,3 +521,5 @@ ZAS.compressed2 = ZAS[, !(colnames(ZAS) %in% cut_2)]
 print(dim(ZAS.compressed2))
 # write.csv(ZAS.compressed2, "ZAS.compressed2.csv")
 ```
+## Section 4: Optimizing and choose the best model.
+(Codes to be added here)
