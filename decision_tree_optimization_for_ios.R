@@ -165,3 +165,12 @@ for (r in 1:5) {
   }
   cat("training set",r,mean(Tree_AUCs),"\n")
 }
+
+##################################### Best tree based on the requirement #####################################
+# Best model with a better AUC and lower complexity and simple features
+# Based on the training set 4 with a tree size of 8 after pruning
+train = ZAS.train4
+r.fit=tree(Cath~., data=train)
+prune.rfit = prune.misclass(r.fit, best = 8)
+plot(prune.rfit)
+text(prune.rfit, pretty = 0)
