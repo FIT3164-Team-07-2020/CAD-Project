@@ -1,5 +1,6 @@
 library(shiny)
-# Boost model needs this library to perform prediction.
+
+# Boost model needs this library to perform the prediction.
 library(adabag)
 
 # Load the boosting machine learning model.
@@ -9,6 +10,7 @@ function(input, output) {
   # FeatureInfo session will check user's inputs' validation as well as output
   # a feature summary for user to double check.
   output$InputValidation <- renderText({
+    
     # Check validation.
     validate(
      need(input$Age > 0, 'Age should be greater then 0 year.'),
@@ -30,13 +32,14 @@ function(input, output) {
      need(input$PLT >= 0, 'Platelet should be no smaller than 0/ml.'),
      need(input$EF.TTE >= 0 & input$EF.TTE <= 100, 'Ejection fraction should be between 0 ~ 100% (both inclusive).')
     )
-    # Summary.
+    
+    # Input summary.
     paste0(
     "Summary of inputs, please double check:\n",
     "Age: ", input$Age, " years;\n",
     "Weight: ", input$Weight, " kg;\n",
     "Height: ", input$Length, " cm;\n",
-    "BMI: ", (input$Weight / (input$Length/100)^2), " kg/(m^2) (This value is auto-calculated according to inputs Weight and Height);\n",
+    "BMI: ", signif((input$Weight / (input$Length/100)^2), 3), " kg/(m^2) (This value is auto-calculated according to inputs Weight and Height and kept 3 significant digits);\n",
     "HTN: ", input$HTN, ";\n",
     "BP: ", input$BP, " mmHg;\n",
     "PR: ", input$PR, " ppm;\n",
@@ -58,7 +61,7 @@ function(input, output) {
     "The Region RWMA input: ", input$Region.RWMA, ".\n\n"
     )})
   
-  # Since the user inputs all values, the confirm button will appear on the  UI.
+  # Since the user inputs all values, let the confirm button to appear on UI.
   outputOptions(output, "InputValidation", suspendWhenHidden = FALSE)
   
   # When the user click the action button, analysis process will begin.
@@ -74,7 +77,7 @@ function(input, output) {
       Age = input$Age,
       Weight = input$Weight,
       Length = input$Length,
-      BMI = ((input$Weight / (input$Length/100)^2)),
+      BMI = (input$Weight / (input$Length/100)^2),
       
       # According to HTN Y/N inputs, generate corresponding factor values.
       HTN = reactive(factor(if (input$HTN == 'Yes') 1 else 0))(),
@@ -123,15 +126,15 @@ function(input, output) {
     #   sapply(features, class)
     # )
     
-    # Use the pre-trained ML model to predict on the input data and output the preducted result.
+    # Use the pre-trained ML model to predict on the input data and output the predicted result.
     predicted = predict.boosting(boost, features)
     output$AnalysisResult = renderText({
       paste0(
-        'By using pre-trained boosting model to analyse the input data: \n',
-        '- The predicted probablity of the class result No is: ', predicted$prob[1], "\n",
-        '- The predicted probablity of the class result Yes is: ', predicted$prob[2], "\n", 
-        '- The predicted class result is: ', reactive(if (predicted$class == '1') 'Yes' else 'No')(), "\n",
-        '(Yes means likely to have coronary artery disease, No means not likely to have coronary artery disease)', "\n",
+        'By using pre-trained boosting model (testing accuracy 92.31%) to analyse the input data:', '<br>',
+        '- The predicted probablity of the class result No is around ', (signif(predicted$prob[1], 4)*100), "%;", '<br>',
+        '- The predicted probablity of the class result Yes is around ', (signif(predicted$prob[2], 4)*100), "%;", '<br>',
+        '<b>', '- The predicted class result is: ', reactive(if (predicted$class == '1') 'Yes' else 'No')(), ';', '</b>', '<br>',
+        '(Yes means likely to have coronary artery disease, No means not likely to have coronary artery disease)', '<br>',
         'Note that this is just the analysis result of a machine learning model, which is just for reference and not guaranteed to have 100% accuracy.')
     })
   })

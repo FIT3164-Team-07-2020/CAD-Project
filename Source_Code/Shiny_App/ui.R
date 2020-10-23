@@ -11,21 +11,25 @@ fluidPage(
     h5("Please strictly follow the medical test results. Note that all values
        below are required to enter, otherwise the analysis is unable to be 
        performed."),
+    
+    # Read inputs from users.
+    # Note that all features' initial values are set as invalid.
+    
     h3("Basic Demographic Information"),
     
-    # Numerical input for age with the min limitation of 0-year-old, initial 0.
+    # Input for age.
     numericInput('Age',
                  'Age (years): ',
                  value = 0,
                  min = 0),
     
-    # Numerical input for weight with the min limitation of 1 kilogram, initial 1.
+    # Input for weight.
     numericInput('Weight',
                  'Weight (kg): ',
                  value = 0,
                  min = 0),
     
-    # Numerical input for length with the min limitation of 1 cm, initial 1.
+    # Input for Height.
     numericInput('Length',
                  'Height (cm): ',
                  value = 0,
@@ -163,6 +167,7 @@ fluidPage(
   
   # Print the text output (in a gray box) to users in the main area.
   mainPanel(
+    
     # Output the input summary and any possible input invalid message.
     verbatimTextOutput('InputValidation'),
     
@@ -172,6 +177,6 @@ fluidPage(
     # verbatimTextOutput('DFTypeSummary'),
     
     # Output the analysis result.
-    verbatimTextOutput('AnalysisResult')
+    htmlOutput('AnalysisResult')
   )
 )
