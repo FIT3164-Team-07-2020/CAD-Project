@@ -1,6 +1,6 @@
 ---
 title: "Code Summary for CAD Project"
-author: " FIT3164 Team 07: Danzel, Xinhao and Yiqiu"
+author: " FIT3164 Team 07: Denzel, Xinhao and Yiqiu"
 date: "2020/8/15"
 output: html_document
 ---
@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Introduction
 
 This document contains all codes with comments written for **FIT3164 Team 07 Heart Disease Project** in 2020.  
-A useful reference of using R Markdown: <http://rmarkdown.rstudio.com>.
 
 ## Section 0: Install and load necessary libraries.
 
@@ -29,7 +28,7 @@ Package Installation:
 ```
 
 Package Loading:
-```{r, warning = FALSE}
+```{r, warning = FALSE, message = FALSE}
 # library()
 library(caret) # This library is used to pre-process the data.
 library(ggplot2) # This library is used to plot any necessary chart / graph.
@@ -37,10 +36,10 @@ library(ROCR) # This library is used to calculate AUC.
 library(kknn) # This library is used to help training the K-nearest Neighbors model.
 library(randomForest) # This library is used to help training the Random Forest model.
 library(e1071) # This library is used to help training the Support Vector Machine model.
-library(tree) #This library is used to build decision tree.
-library(adabag) # This library is used to build adaptive boosting and bagging models
-library(mltools) #Primarily used for one hot encoding.
-library(data.table) #Used for converting data frame to a data.table, which makes it  easier to perform one hot encoding.
+library(tree) # This library is used to build decision tree.
+library(adabag) # This library is used to build adaptive boosting and boosting models
+library(mltools) # Primarily used for one hot encoding.
+library(data.table) # Used for converting data frame to a data.table, which makes it  easier to perform one hot encoding.
 ```
 
 ## Section 1: Data Preparation and Understanding.
@@ -70,7 +69,9 @@ Check the number of rows (patients) and columns (features).
 dim(ZAS)
 ```
 
-Remove predictor features with zero / nearly zero variances (the reason is that the features have extremely unbalanced value distribution which don't significantly help predicting CAD).
+We need to remove predictor features with zero / nearly zero variances as features that have extremely unbalanced value distribution have little to no impact in helping predicting CAD).
+
+First we'll find the features with zero/near-zero variances.
 ```{r}
 # Find predictor features with zero / nearly-zero variances.
 # Record their column indexes.
@@ -80,11 +81,16 @@ print(paste0("Number of predictor features with zero or near-zero variances: ",
              length(nzv_feature_indexes)))
 print(paste0("Following predictor features have zero or near-zero variances and should be removed: ",
              toString(colnames(ZAS)[nzv_feature_indexes])))
+```
+
+Now we'll remove all of these variables from our dataset.
+```{r}
 # Remove predictor features with zero / nearly-zero variances.
 ZAS = ZAS[, -nzv_feature_indexes]
 ```
 
-Convert all "factor" variables into "character" type. This makes it easier to convert them into numeric values.
+
+We now need to convert "factor" variables into "character" type. This makes it easier to convert them into numeric values, which is necessary for later encoding our categorical variables.
 ```{r}
 for (feature_index in 1:ncol(ZAS)) {
   # Get column name
@@ -126,7 +132,8 @@ ZAS$Cath[ZAS$Cath == "Normal"] = 0
 ZAS$Cath[ZAS$Cath == "Cad"] = 1
 ```
 
-Convert values of features (Function Class, Region RWMA and VHD) with more than two categories to dummy variables via one hot encoding.
+Now we need to perform one hot encoding on categorical variables with more than two factor levels. In this case we convert the variables Function Class, Region RWMA and VHD.
+
 ```{r}
 #Convert all to factor first so the variables are the same class.
 ZAS$Function.Class = as.factor(ZAS$Function.Class)
@@ -163,7 +170,7 @@ for (feature_index in 1:ncol(ZAS)) {
 }
 ```
 
-Check the current type of each feature to ensure they are in expected: there should be 30 categorical features (which should be all factor typed) and 21 quantitative features (which should be either numeric or integer typed).
+We'll now check the current type of each feature to ensure they are in expected: there should be 30 categorical features (which should be all factor typed) and 21 quantitative features (which should be either numeric or integer typed).
 ```{r}
 types = sapply(ZAS, class)
 print(paste0("The number of factor typed features: ",
@@ -172,6 +179,10 @@ print(paste0("The number of numeric / integer typed features: ",
              length(grep("numeric", types)) + length(grep("integer", types))))
 print(types)
 ```
+
+## Creating Testing and Training datasets
+
+For our intial model training phase, we'll create five different testing/training sets and use them to train our models.
 
 Split the dataset into train and test sets (in 70%-30% ratio).
 ```{r}
@@ -222,7 +233,7 @@ In this section, 7 preliminary machine learning classification models will be bu
 
 Each model will be trained 5 times using 5 train-test sets combination generated in Section 1. The average accuracy & AUC of each model will be calculated, recorded and compared.  
 
-K-nearest neighbor:
+## K-nearest neighbor:
 ``` {r}
 # Create vectors containing AUC and accuracy of each round's model.
 KNN_AUCs = c()
@@ -248,7 +259,7 @@ print(paste0("Average AUC for KNN: ", mean(KNN_AUCs)))
 print(paste0("Average accuracy of KNN: ", mean(KNN_accuracies)))
 ```
 
-Random forest:
+## Random forest:
 ``` {r}
 # Create vectors containing AUC and accuracy of each round's model.
 RF_AUCs = c()
@@ -293,7 +304,7 @@ print(paste0("Average AUC for RF: ", mean(RF_AUCs)))
 print(paste0("Average accuracy of RF: ", mean(RF_accuracies)))
 ```
 
-Support Vector Machine:
+## Support Vector Machine:
 ``` {r}
 # Create vectors containing AUC and accuracy of each round's model.
 SVM_AUCs = c()
@@ -320,7 +331,7 @@ print(paste0("Average AUC for SVM: ", mean(SVM_AUCs)))
 print(paste0("Average accuracy of SVM: ", mean(SVM_accuracies)))
 ```
 
-Naive Bayes:
+## Naive Bayes:
 ``` {r}
 bayes = naiveBayes(Cath~., data=ZAS.train1)
 Bayes_AUCs = c()
@@ -351,7 +362,7 @@ cat("\n")
 cat(paste0("Average accuracy of Naive Bayes: ", round(mean(Bayes_accuracies),digits = 5)))
 ```
 
-Decision Tree:
+## Decision Tree:
 ``` {r}
 # Create vectors containing AUC and accuracy of each round's model.
 Tree_AUCs = c()
@@ -383,7 +394,7 @@ cat("\n")
 cat(paste0("Average accuracy of decision tree: ", round(mean(Tree_accuracies),digits = 5)))
 ```
 
-Boosting (Adaptive)
+## Boosting (Adaptive)
 
 ```{r}
 #Boosting
@@ -398,8 +409,7 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   boost = boosting(Cath~., data = train)
-  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
-  boostpredict = predict.boosting(boost, newdata = test_no_cath)
+  boostpredict = predict.boosting(boost, newdata = test)
   #Calculate accuracy of the model
   n = sum(boostpredict$confusion)
   x = diag(boostpredict$confusion)
@@ -429,7 +439,7 @@ print(paste0("Average accuracy of boosting: ", mean(Boost_accuracies)))
 
 ```
 
-Boosting (Gradient)
+## Boosting (Gradient)
 
 ```{r message=FALSE, warning=FALSE}
 #Gradient Boosting
@@ -442,8 +452,7 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   gradb = train(Cath~., data = train, method = "gbm", verbose = FALSE)
-  test_no_cath= test[, !(colnames(test) %in% c("Cath"))]
-  gradbpredict = predict(gradb, test_no_cath)
+  gradbpredict = predict(gradb, test)
   #Calculate accuracy
   conf_matrix = table(test$Cath, gradbpredict, dnn = c("Actual", "Predicted"))
   accuracy = (conf_matrix[1] + conf_matrix[4]) / sum(conf_matrix)
@@ -459,7 +468,7 @@ print(paste0("Average accuracy of Gradient Boosting: ", mean(gradb_accuracies)))
 ```
 
 
-Bagging
+## Bagging
 
 ```{r}
 #Bagging
@@ -473,8 +482,7 @@ for(index in 1:5) {
   test = get(paste0("ZAS.test", index))
   # Train the model and get the fitted values.
   bagg = bagging(Cath~., data = train)
-  test_no_cath = test[, !(colnames(test) %in% c("Cath"))]
-  baggpredict = predict.bagging(bagg, newdata = test_no_cath)
+  baggpredict = predict.bagging(bagg, newdata = test)
   #Calculate accuracy of the model
   n = sum(baggpredict$confusion)
   x = diag(baggpredict$confusion)
@@ -522,4 +530,202 @@ print(dim(ZAS.compressed2))
 # write.csv(ZAS.compressed2, "ZAS.compressed2.csv")
 ```
 ## Section 4: Optimizing and choose the best model.
-(Codes to be added here)
+
+In this section, the best models from the previous section are selected and further optimised in order to achieve the best performance possible.
+
+In addition, a neural network will be trained and evaluated in this section using the feature-selected data.
+
+## Neural Network
+```{r eval = FALSE}
+# Train and test sets with threshold 1 applied.
+set.seed(316407)
+training.rows1 = sample(1:nrow(ZAS.compressed1), 0.7*nrow(ZAS.compressed1))
+train1 = ZAS.compressed1[training.rows1,]
+test1 = ZAS.compressed1[-training.rows1,]
+# Train and test sets with threshold 2 applied.
+set.seed(316407)
+training.rows2 = sample(1:nrow(ZAS.compressed2), 0.7*nrow(ZAS.compressed2))
+train2 = ZAS.compressed2[training.rows2,]
+test2 = ZAS.compressed2[-training.rows2,]
+# Since the neuralnet() function can only deal with quantitative variables, all 
+# qualitative variables need to be converted into dummy variables.
+# Threshold 1.
+train1_dummy = model.matrix(~., data = train1)[,-1]
+test1_dummy = model.matrix(~., data = test1)[,-1]
+# Threshold 2.
+train2_dummy = model.matrix(~., data = train2)[,-1]
+test2_dummy = model.matrix(~., data = test2)[,-1]
+# According to thumb of rules from below article, set different numbers of
+# hidden layers and neurons.
+# https://www.heatonresearch.com/2017/06/01/hidden-layers.html
+# Number of hidden layers.
+n_hlayers = 3
+# Number of neurons for threshold 1.
+input_size1 = ncol(train1)
+n_hneurons1 = as.integer(c(0.5*input_size1, 2/3*input_size1,
+                          input_size1, 2*input_size1))
+# Number of neurons for threshold 2.
+input_size2 = ncol(train2)
+n_hneurons2 = as.integer(c(0.5*input_size2, 2/3*input_size2,
+                           input_size2, 2*input_size2))
+# For each combination of hidden layers & neurons, train the neural network and 
+# evaluate the ROC / AUC.
+# Threshold 1.
+for (hlayer in 1:n_hlayers) {
+  for (hneuron_index in 1:length(n_hneurons1)) {
+    # Generate the tuned parameters for this iteration.
+    hiddens = rep(n_hneurons1[hneuron_index], times = hlayer)
+    # To reduce the randomness of the training, set the random seed.
+    set.seed(316407)
+    # Train the neural network.
+    nnet = neuralnet(Cath1~., train1_dummy, hidden = hiddens, 
+                     linear.output = FALSE)
+    # Feed the test data into trained model to predict.
+    test1_no_cad = test1_dummy[, !(colnames(test1_dummy) %in% c("Cath1"))]
+    fitted_values = round(predict(nnet, test1_no_cad))
+    pred = ROCR::prediction(as.numeric(fitted_values), test1$Cath)
+    # Calculate the AUC and confusion matrix.
+    AUC = performance(pred, 'auc')@y.values
+    conf_matrix = table(test1$Cath, fitted_values,
+                        dnn = c("Actual", "Predicted"))
+    # Print the result.
+    print("Threshold1: ")
+    print(paste0("Number of hidden layers: ",
+                 hlayer, 
+                 "; Number of neurons in each hidden layer: ", 
+                 n_hneurons1[hneuron_index]))
+    print(paste0("AUC: ", AUC))
+    print(conf_matrix)
+  }
+}
+# Threshold 2.
+for (hlayer in 1:n_hlayers) {
+  for (hneuron_index in 1:length(n_hneurons2)) {
+    # Generate the tuned parameters for this iteration.
+    hiddens = rep(n_hneurons2[hneuron_index], times = hlayer)
+    # To reduce the randomness of the training, set the random seed.
+    set.seed(316407)
+    # Train the neural network.
+    nnet = neuralnet(Cath1~., train2_dummy, hidden = hiddens, 
+                     linear.output = FALSE)
+    # Feed the test data into trained model to predict.
+    test2_no_cad = test2_dummy[, !(colnames(test2_dummy) %in% c("Cath1"))]
+    fitted_values = round(predict(nnet, test2_no_cad))
+    pred = ROCR::prediction(as.numeric(fitted_values), test2$Cath)
+    # Calculate the AUC and confusion matrix.
+    AUC = performance(pred, 'auc')@y.values
+    conf_matrix = table(test2$Cath, fitted_values,
+                        dnn = c("Actual", "Predicted"))
+    # Print the result.
+    print("Threshold2: ")
+    print(paste0("Number of hidden layers: ",
+                 hlayer, 
+                 "; Number of neurons in each hidden layer: ", 
+                 n_hneurons2[hneuron_index]))
+    print(paste0("AUC: ", AUC))
+    print(conf_matrix)
+  }
+}
+```
+
+## Bagging and Boosting
+
+The algorithms were optimised by running multiple iterations with different nbagg values and obtaining the nbagg value with the lowest OOB error.
+This chunk of code takes a very long time to run, so is excluded from running in the R Markdown in order to save time when running the whole program.
+```{r eval = FALSE}
+#Bagging Optimisation
+OOB_1 = data.frame("OOB_Error" = c(), "ntrees" = c())
+OOB_2 = data.frame("OOB_Error" = c(), "ntrees" = c())
+
+for(index in 1:2) {
+  # Iterate through each compressed dataset
+  ZAS_Data = get(paste0("ZAS.compressed", index))
+  
+  # Set the seed
+  set.seed(3164)
+  # Get 70% of the dataset to be training dataset.
+  training.rows = sample(1:nrow(ZAS_Data), 0.7*nrow(ZAS_Data))
+  ZAS.train = ZAS_Data[training.rows,]
+  # The rest of rows are testing dataset.
+  ZAS.test = ZAS_Data[-training.rows,]
+  
+  for (ntrees in 100:200) {
+    bagg = train(Cath~., data = ZAS.train, method = "treebag", nbagg = ntrees)
+    newrow = c(bagg$results$Accuracy, ntrees)
+    if (index == 1) {
+      OOB_1 = rbind(OOB_1, newrow)
+    }
+    else {
+      OOB_2 = rbind(OOB_2, newrow)
+    }
+  }
+  ggplot(data = get(paste0("OOB_", index)), aes(x = ntrees, y = OOB_error)) + geom_line()
+}
+
+
+#Boosting Optimisation
+OOB_1 = data.frame("OOB_Error" = c(), "ntrees" = c())
+OOB_2 = data.frame("OOB_Error" = c(), "ntrees" = c())
+
+for(index in 1:2) {
+  # Iterate through each compressed dataset
+  ZAS_Data = get(paste0("ZAS.compressed", index))
+  
+  # Set the seed
+  set.seed(3164)
+  # Get 70% of the dataset to be training dataset.
+  training.rows = sample(1:nrow(ZAS_Data), 0.7*nrow(ZAS_Data))
+  ZAS.train = ZAS_Data[training.rows,]
+  # The rest of rows are testing dataset.
+  ZAS.test = ZAS_Data[-training.rows,]
+  
+  for (ntrees in 25:50) {
+    boost = train(Cath~., data = ZAS.train, method = "adaboost", nbagg = ntrees)
+    newrow = c(boost$results$Accuracy, ntrees)
+    if (index == 1) {
+      OOB_1 = rbind(OOB_1, newrow)
+    }
+    else {
+      OOB_2 = rbind(OOB_2, newrow)
+    }
+  }
+  ggplot(data = get(paste0("OOB_", index)), aes(x = ntrees, y = OOB_error)) + geom_line()
+}
+```
+
+## Section 4: Creating the Final Model
+
+The final model chosen is an adaptive boosting model.
+The code below creates the model and also evaluates its performance.
+```{r}
+# Model seems to output different results if the training/testing dataset creation is excluded from the code. I have left it in here as it preserves the original performance of the model.
+
+# Create training and testing datasets
+set.seed(3164)
+# Get 70% of the dataset to be training dataset.
+training.rows = sample(1:nrow(ZAS.compressed1), 0.7*nrow(ZAS.compressed1))
+ZAS.train1 = ZAS.compressed1[training.rows,]
+# The rest of rows are testing dataset.
+ZAS.test1 = ZAS.compressed1[-training.rows,]
+
+training.rows = sample(1:nrow(ZAS.compressed2), 0.7*nrow(ZAS.compressed2))
+ZAS.train2 = ZAS.compressed2[training.rows,]
+# The rest of rows are testing dataset.
+ZAS.test2 = ZAS.compressed2[-training.rows,]
+
+#Train the optimised boosting model
+boost = adabag::boosting(Cath~., data = ZAS.train2, mfinal = 40)
+# # Save the best model as an individual data file so it can be re-loaded and 
+# # used later for the final webpage.
+# save(boost, file = "boost_model.Rdata")
+boostpredict = predict.boosting(boost, newdata = ZAS.test2)
+#Calculate accuracy of the model
+n = sum(boostpredict$confusion)
+x = diag(boostpredict$confusion)
+accuracy = sum(x)/n
+boostprob = ROCR::prediction(boostpredict$prob[,2], ZAS.test2$Cath)
+boost_AUC = performance(boostprob, "auc")@y.values
+print(paste0("Model AUC: ",as.numeric(boost_AUC)))
+print(paste0("Model Accuracy: ", accuracy))
+```
+
