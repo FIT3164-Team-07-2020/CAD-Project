@@ -15,6 +15,7 @@ fluidPage(
     # Read inputs from users.
     # Note that all features' initial values are set as invalid.
     
+    #Sub-Title text
     h3("Basic Demographic Information"),
     
     # Input for age.
@@ -35,6 +36,7 @@ fluidPage(
                  value = 0,
                  min = 0),
     
+    #Sub-Title text
     h3("Symptom Examination"),
     
     # Input for BP (blood pressure).
@@ -49,6 +51,7 @@ fluidPage(
                  value = -1,
                  min = 0),
     
+    #Insert text
     h5("Select the appropriate option below if the patient has the following:"),
     
     # Input for HTN (Hypertension).
@@ -63,6 +66,7 @@ fluidPage(
                  'Chest pain',
                  choices = c('None','Typical', 'Atypical'), selected = 'None'),
     
+    #Sub-Title text
     h3("EKG and Echocardiogram Results"),
     
     # Input for Tinversion.
@@ -76,6 +80,7 @@ fluidPage(
                 c(0, 1, 2, 3, 4),
                 selected = 0),
     
+    #Sub-Title text
     h3("Blood Analysis"),
     
     # Input for FBS (fasting blood sugar).
