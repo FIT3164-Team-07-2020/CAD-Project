@@ -1,0 +1,8 @@
+Shiny admin account:
+link: https://www.shinyapps.io/admin/
+username: fit3164.team07.2020@gmail.com
+password: monashuni316407!
+
+Gmail account linked to shiny admin account (user name & password same as Shiny admin):
+username: fit3164.team07.2020@gmail.com
+password: monashuni316407!
